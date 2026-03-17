@@ -1,0 +1,18 @@
+  Determining projects to restore...
+D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj : warning NU1903: Package 'AutoMapper' 16.1.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-rvv3-g6hj-g44x [D:\project_WebNangCao\backend\Buzzify.API\Buzzify.API.csproj]
+  All projects are up-to-date for restore.
+D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj : warning NU1903: Package 'AutoMapper' 16.1.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-rvv3-g6hj-g44x
+  Buzzify.Core -> D:\project_WebNangCao\backend\Buzzify.Core\bin\Debug\net9.0\Buzzify.Core.dll
+  Buzzify.Application -> D:\project_WebNangCao\backend\Buzzify.Application\bin\Debug\net9.0\Buzzify.Application.dll
+  Buzzify.Infrastructure -> D:\project_WebNangCao\backend\Buzzify.Infrastructure\bin\Debug\net9.0\Buzzify.Infrastructure.dll
+D:\project_WebNangCao\backend\Buzzify.API\Controllers\UsersController.cs(15,16): error CS1520: Method must have a return type [D:\project_WebNangCao\backend\Buzzify.API\Buzzify.API.csproj]
+
+Build FAILED.
+
+D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj : warning NU1903: Package 'AutoMapper' 16.1.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-rvv3-g6hj-g44x [D:\project_WebNangCao\backend\Buzzify.API\Buzzify.API.csproj]
+D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj : warning NU1903: Package 'AutoMapper' 16.1.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-rvv3-g6hj-g44x
+D:\project_WebNangCao\backend\Buzzify.API\Controllers\UsersController.cs(15,16): error CS1520: Method must have a return type [D:\project_WebNangCao\backend\Buzzify.API\Buzzify.API.csproj]
+    2 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:01.56

@@ -1,0 +1,14 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  Buzzify.Core -> D:\project_WebNangCao\backend\Buzzify.Core\bin\Debug\net9.0\Buzzify.Core.dll
+D:\project_WebNangCao\backend\Buzzify.Application\Interfaces\ISongService.cs(9,14): error CS0246: The type or namespace name 'PagedResultDto<>' could not be found (are you missing a using directive or an assembly reference?) [D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj]
+D:\project_WebNangCao\backend\Buzzify.Application\Services\SongService.cs(14,32): error CS0738: 'SongService' does not implement interface member 'ISongService.GetAllSongsAsync(string?, int, int)'. 'SongService.GetAllSongsAsync(string?, int, int)' cannot implement 'ISongService.GetAllSongsAsync(string?, int, int)' because it does not have the matching return type of 'Task<PagedResultDto<SongDto>>'. [D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj]
+
+Build FAILED.
+
+D:\project_WebNangCao\backend\Buzzify.Application\Interfaces\ISongService.cs(9,14): error CS0246: The type or namespace name 'PagedResultDto<>' could not be found (are you missing a using directive or an assembly reference?) [D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj]
+D:\project_WebNangCao\backend\Buzzify.Application\Services\SongService.cs(14,32): error CS0738: 'SongService' does not implement interface member 'ISongService.GetAllSongsAsync(string?, int, int)'. 'SongService.GetAllSongsAsync(string?, int, int)' cannot implement 'ISongService.GetAllSongsAsync(string?, int, int)' because it does not have the matching return type of 'Task<PagedResultDto<SongDto>>'. [D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj]
+    0 Warning(s)
+    2 Error(s)
+
+Time Elapsed 00:00:01.99

@@ -1,0 +1,56 @@
+  Determining projects to restore...
+D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj : warning NU1903: Package 'AutoMapper' 16.1.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-rvv3-g6hj-g44x [D:\project_WebNangCao\backend\Buzzify.API\Buzzify.API.csproj]
+  All projects are up-to-date for restore.
+D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj : warning NU1903: Package 'AutoMapper' 16.1.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-rvv3-g6hj-g44x
+  Buzzify.Core -> D:\project_WebNangCao\backend\Buzzify.Core\bin\Debug\net9.0\Buzzify.Core.dll
+D:\project_WebNangCao\backend\Buzzify.Application\Services\UserService.cs(27,25): warning CS8601: Possible null reference assignment. [D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj]
+D:\project_WebNangCao\backend\Buzzify.Application\Services\UserService.cs(44,25): warning CS8601: Possible null reference assignment. [D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj]
+D:\project_WebNangCao\backend\Buzzify.Application\Services\AuthService.cs(58,25): warning CS8601: Possible null reference assignment. [D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj]
+D:\project_WebNangCao\backend\Buzzify.Application\Services\AuthService.cs(59,28): warning CS8601: Possible null reference assignment. [D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj]
+D:\project_WebNangCao\backend\Buzzify.Application\Services\AuthService.cs(60,24): warning CS8601: Possible null reference assignment. [D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj]
+D:\project_WebNangCao\backend\Buzzify.Application\Services\PlaylistService.cs(49,65): error CS0246: The type or namespace name 'SongDto' could not be found (are you missing a using directive or an assembly reference?) [D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj]
+D:\project_WebNangCao\backend\Buzzify.Application\Services\AuthService.cs(155,37): warning CS8600: Converting null literal or possible null value to non-nullable type. [D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj]
+D:\project_WebNangCao\backend\Buzzify.Application\Services\AuthService.cs(160,34): warning CS8600: Converting null literal or possible null value to non-nullable type. [D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj]
+D:\project_WebNangCao\backend\Buzzify.Application\Services\AuthService.cs(165,69): warning CS8604: Possible null reference argument for parameter 'email' in 'Task<Profile?> IProfileRepository.GetByEmailAsync(string email)'. [D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj]
+D:\project_WebNangCao\backend\Buzzify.Application\Services\AuthService.cs(180,38): warning CS8601: Possible null reference assignment. [D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj]
+D:\project_WebNangCao\backend\Buzzify.Application\Services\AuthService.cs(182,130): warning CS8604: Possible null reference argument for parameter 'stringToEscape' in 'string Uri.EscapeDataString(string stringToEscape)'. [D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj]
+D:\project_WebNangCao\backend\Buzzify.Application\Services\AuthService.cs(207,29): warning CS8601: Possible null reference assignment. [D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj]
+D:\project_WebNangCao\backend\Buzzify.Application\Services\AuthService.cs(208,32): warning CS8601: Possible null reference assignment. [D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj]
+D:\project_WebNangCao\backend\Buzzify.Application\Services\AuthService.cs(209,28): warning CS8601: Possible null reference assignment. [D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj]
+D:\project_WebNangCao\backend\Buzzify.Application\Services\AuthService.cs(267,38): warning CS8601: Possible null reference assignment. [D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj]
+D:\project_WebNangCao\backend\Buzzify.Application\Services\AuthService.cs(269,127): warning CS8604: Possible null reference argument for parameter 'stringToEscape' in 'string Uri.EscapeDataString(string stringToEscape)'. [D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj]
+D:\project_WebNangCao\backend\Buzzify.Application\Services\AuthService.cs(294,29): warning CS8601: Possible null reference assignment. [D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj]
+D:\project_WebNangCao\backend\Buzzify.Application\Services\AuthService.cs(295,32): warning CS8601: Possible null reference assignment. [D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj]
+D:\project_WebNangCao\backend\Buzzify.Application\Services\AuthService.cs(296,28): warning CS8601: Possible null reference assignment. [D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj]
+D:\project_WebNangCao\backend\Buzzify.Application\Services\AuthService.cs(318,58): warning CS8604: Possible null reference argument for parameter 'email' in 'Task<string> IOtpService.GenerateOtpAsync(string email)'. [D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj]
+D:\project_WebNangCao\backend\Buzzify.Application\Services\AuthService.cs(388,58): warning CS8604: Possible null reference argument for parameter 'value' in 'Claim.Claim(string type, string value)'. [D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj]
+
+Build FAILED.
+
+D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj : warning NU1903: Package 'AutoMapper' 16.1.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-rvv3-g6hj-g44x [D:\project_WebNangCao\backend\Buzzify.API\Buzzify.API.csproj]
+D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj : warning NU1903: Package 'AutoMapper' 16.1.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-rvv3-g6hj-g44x
+D:\project_WebNangCao\backend\Buzzify.Application\Services\UserService.cs(27,25): warning CS8601: Possible null reference assignment. [D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj]
+D:\project_WebNangCao\backend\Buzzify.Application\Services\UserService.cs(44,25): warning CS8601: Possible null reference assignment. [D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj]
+D:\project_WebNangCao\backend\Buzzify.Application\Services\AuthService.cs(58,25): warning CS8601: Possible null reference assignment. [D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj]
+D:\project_WebNangCao\backend\Buzzify.Application\Services\AuthService.cs(59,28): warning CS8601: Possible null reference assignment. [D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj]
+D:\project_WebNangCao\backend\Buzzify.Application\Services\AuthService.cs(60,24): warning CS8601: Possible null reference assignment. [D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj]
+D:\project_WebNangCao\backend\Buzzify.Application\Services\AuthService.cs(155,37): warning CS8600: Converting null literal or possible null value to non-nullable type. [D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj]
+D:\project_WebNangCao\backend\Buzzify.Application\Services\AuthService.cs(160,34): warning CS8600: Converting null literal or possible null value to non-nullable type. [D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj]
+D:\project_WebNangCao\backend\Buzzify.Application\Services\AuthService.cs(165,69): warning CS8604: Possible null reference argument for parameter 'email' in 'Task<Profile?> IProfileRepository.GetByEmailAsync(string email)'. [D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj]
+D:\project_WebNangCao\backend\Buzzify.Application\Services\AuthService.cs(180,38): warning CS8601: Possible null reference assignment. [D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj]
+D:\project_WebNangCao\backend\Buzzify.Application\Services\AuthService.cs(182,130): warning CS8604: Possible null reference argument for parameter 'stringToEscape' in 'string Uri.EscapeDataString(string stringToEscape)'. [D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj]
+D:\project_WebNangCao\backend\Buzzify.Application\Services\AuthService.cs(207,29): warning CS8601: Possible null reference assignment. [D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj]
+D:\project_WebNangCao\backend\Buzzify.Application\Services\AuthService.cs(208,32): warning CS8601: Possible null reference assignment. [D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj]
+D:\project_WebNangCao\backend\Buzzify.Application\Services\AuthService.cs(209,28): warning CS8601: Possible null reference assignment. [D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj]
+D:\project_WebNangCao\backend\Buzzify.Application\Services\AuthService.cs(267,38): warning CS8601: Possible null reference assignment. [D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj]
+D:\project_WebNangCao\backend\Buzzify.Application\Services\AuthService.cs(269,127): warning CS8604: Possible null reference argument for parameter 'stringToEscape' in 'string Uri.EscapeDataString(string stringToEscape)'. [D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj]
+D:\project_WebNangCao\backend\Buzzify.Application\Services\AuthService.cs(294,29): warning CS8601: Possible null reference assignment. [D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj]
+D:\project_WebNangCao\backend\Buzzify.Application\Services\AuthService.cs(295,32): warning CS8601: Possible null reference assignment. [D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj]
+D:\project_WebNangCao\backend\Buzzify.Application\Services\AuthService.cs(296,28): warning CS8601: Possible null reference assignment. [D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj]
+D:\project_WebNangCao\backend\Buzzify.Application\Services\AuthService.cs(318,58): warning CS8604: Possible null reference argument for parameter 'email' in 'Task<string> IOtpService.GenerateOtpAsync(string email)'. [D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj]
+D:\project_WebNangCao\backend\Buzzify.Application\Services\AuthService.cs(388,58): warning CS8604: Possible null reference argument for parameter 'value' in 'Claim.Claim(string type, string value)'. [D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj]
+D:\project_WebNangCao\backend\Buzzify.Application\Services\PlaylistService.cs(49,65): error CS0246: The type or namespace name 'SongDto' could not be found (are you missing a using directive or an assembly reference?) [D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj]
+    22 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:02.67

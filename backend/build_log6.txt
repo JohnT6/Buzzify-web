@@ -1,0 +1,10 @@
+C:\Program Files\dotnet\sdk\9.0.201\Microsoft.Common.CurrentVersion.targets(5063,5): error MSB3027: Could not copy "D:\project_WebNangCao\backend\Buzzify.Application\bin\Debug\net9.0\Buzzify.Application.dll" to "bin\Debug\net9.0\Buzzify.Application.dll". Exceeded retry count of 10. Failed. The file is locked by: "Buzzify.API (12172)" [d:\project_WebNangCao\backend\Buzzify.API\Buzzify.API.csproj]
+C:\Program Files\dotnet\sdk\9.0.201\Microsoft.Common.CurrentVersion.targets(5063,5): error MSB3021: Unable to copy file "D:\project_WebNangCao\backend\Buzzify.Application\bin\Debug\net9.0\Buzzify.Application.dll" to "bin\Debug\net9.0\Buzzify.Application.dll". The process cannot access the file 'd:\project_WebNangCao\backend\Buzzify.API\bin\Debug\net9.0\Buzzify.Application.dll' because it is being used by another process. [d:\project_WebNangCao\backend\Buzzify.API\Buzzify.API.csproj]
+C:\Program Files\dotnet\sdk\9.0.201\Microsoft.Common.CurrentVersion.targets(5063,5): error MSB3027: Could not copy "d:\project_WebNangCao\backend\Buzzify.Infrastructure\bin\Debug\net9.0\Buzzify.Infrastructure.dll" to "bin\Debug\net9.0\Buzzify.Infrastructure.dll". Exceeded retry count of 10. Failed. The file is locked by: "Buzzify.API (12172)" [d:\project_WebNangCao\backend\Buzzify.API\Buzzify.API.csproj]
+C:\Program Files\dotnet\sdk\9.0.201\Microsoft.Common.CurrentVersion.targets(5063,5): error MSB3021: Unable to copy file "d:\project_WebNangCao\backend\Buzzify.Infrastructure\bin\Debug\net9.0\Buzzify.Infrastructure.dll" to "bin\Debug\net9.0\Buzzify.Infrastructure.dll". The process cannot access the file 'd:\project_WebNangCao\backend\Buzzify.API\bin\Debug\net9.0\Buzzify.Infrastructure.dll' because it is being used by another process. [d:\project_WebNangCao\backend\Buzzify.API\Buzzify.API.csproj]
+
+Build FAILED.
+    21 Warning(s)
+    4 Error(s)
+
+Time Elapsed 00:00:19.34
