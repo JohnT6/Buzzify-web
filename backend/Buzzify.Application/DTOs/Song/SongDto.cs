@@ -17,5 +17,9 @@ namespace Buzzify.Application.DTOs.Song
         public string? TenNgheSi { get; set; }
         public string? AnhNgheSi { get; set; }
         public string? ArtistId { get; set; }
+        // Thông tin Album
+        public string? TenAlbum { get; set; }
+        public string? IdAlbum { get; set; }
+        public DateOnly? NgayPhatHanh { get; set; }
     }
 }

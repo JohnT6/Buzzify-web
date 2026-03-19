@@ -1,8 +1,66 @@
 import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
 import Cookies from 'js-cookie';
-import { getCurrentUserApi, getPlaylistsApi, getSongsApi, playSongApi } from '../services/api_services';
+import { getCurrentUserApi, getPlaylistsApi, getSongsApi, playSongApi, getLikedPlaylistApi, addSongToPlaylistApi, removeSongFromPlaylistApi } from '../services/api_services';
 
 const MusicContext = createContext();
+
+const API_BASE = import.meta.env.VITE_API_URL || '';
+
+// ───────────────────────────────────────────────
+// Parser: LRC format -> [{time: seconds, text}]
+// ───────────────────────────────────────────────
+const parseLRC = (lrcString) => {
+    if (!lrcString) return [];
+    const lines = lrcString.split('\n');
+    const result = [];
+    for (const line of lines) {
+        const match = line.match(/^\[(\d{2}):(\d{2})\.?(\d{0,3})\]\s*(.*)/);
+        if (match) {
+            const minutes = parseInt(match[1], 10);
+            const seconds = parseInt(match[2], 10);
+            const ms = match[3] ? parseInt(match[3].padEnd(3, '0'), 10) : 0;
+            const time = minutes * 60 + seconds + ms / 1000;
+            const text = (match[4] || '').trim();
+            if (text) result.push({ time, text });
+        }
+    }
+    return result.sort((a, b) => a.time - b.time);
+};
+
+// ───────────────────────────────────────────────
+// Fetch lyrics from lrclib.net
+// ───────────────────────────────────────────────
+const fetchLyrics = async (trackName, artistName, albumName, duration) => {
+    if (!trackName) throw new Error('Không có tên bài hát');
+    const params = new URLSearchParams();
+    params.set('track_name', trackName);
+    if (artistName) params.set('artist_name', artistName);
+    if (albumName) params.set('album_name', albumName);
+
+    const res = await fetch(`https://lrclib.net/api/search?${params.toString()}`);
+    if (!res.ok) throw new Error('Không thể kết nối lrclib.net');
+
+    const data = await res.json();
+    if (!data || data.length === 0) throw new Error('Không tìm thấy lời bài hát');
+
+    let best = data[0];
+    if (duration && duration > 0) {
+        best = data.reduce((prev, cur) => {
+            const curHasSync = !!cur.syncedLyrics;
+            const prevHasSync = !!prev.syncedLyrics;
+            if (curHasSync && !prevHasSync) return cur;
+            if (!curHasSync && prevHasSync) return prev;
+            const prevDiff = Math.abs((prev.duration || 0) - duration);
+            const curDiff = Math.abs((cur.duration || 0) - duration);
+            return curDiff < prevDiff ? cur : prev;
+        }, data[0]);
+    }
+
+    return {
+        synced: best.syncedLyrics || null,
+        plain: best.plainLyrics || null,
+    };
+};
 
 export const MusicProvider = ({ children }) => {
     const [currentSong, setCurrentSong] = useState(null);
@@ -12,6 +70,10 @@ export const MusicProvider = ({ children }) => {
     const [sourceInfo, setSourceInfo] = useState(null); // { type: 'playlist' | 'album' | 'search', id: string, name: string }
     const [likedSongIds, setLikedSongIds] = useState(new Set());
     const [likedPlaylistId, setLikedPlaylistId] = useState(null);
+    const [isShuffle, setIsShuffle] = useState(false);
+    const [repeatMode, setRepeatMode] = useState('none'); // 'none' | 'all' | 'one'
+    const [currentLyrics, setCurrentLyrics] = useState({ synced: [], plain: [], status: 'idle' });
+    const [user, setUser] = useState(null);
     const audioRef = useRef(new Audio());
 
     // Sync volume with local storage or default
@@ -21,33 +83,62 @@ export const MusicProvider = ({ children }) => {
         audioRef.current.volume = volume;
     }, [volume]);
 
-    // Initialize: load liked songs
+    // Initialize: load liked songs and user
     useEffect(() => {
-        const fetchLikedSongs = async () => {
+        const init = async () => {
             const token = Cookies.get('access_token');
             if (!token) return;
 
             try {
-                const playlists = await getPlaylistsApi();
-                const allPlaylists = Array.isArray(playlists) ? playlists : (playlists?.data || []);
-                // Giả định playlist "Liked Songs" hoặc lấy từ API chuyên biệt nếu có
-                const likedPl = allPlaylists.find(p => p.ten?.toLowerCase().includes('thích') || p.loaiPlaylist === 'liked');
-                
-                if (likedPl) {
+                const [uRes, lRes] = await Promise.all([
+                    getCurrentUserApi(),
+                    getLikedPlaylistApi()
+                ]);
+
+                if (uRes) setUser(uRes);
+
+                const likedPl = lRes;
+                if (likedPl && likedPl.id) {
                     setLikedPlaylistId(likedPl.id);
-                    // Ở đây cần một API lấy bài hát của playlist. Hiện tại api_services chưa có getPlaylistSongs.
-                    // Tạm thời để trống hoặc giả định setLikedSongIds sẽ được cập nhật khi tương tác.
+                    const ids = new Set((likedPl.songs || []).map(s => s.id));
+                    setLikedSongIds(ids);
                 }
             } catch (error) {
-                console.error("Lỗi khi tải danh sách yêu thích:", error);
+                console.error("Lỗi khi khởi tạo nhạc:", error);
             }
         };
 
-        fetchLikedSongs();
+        init();
     }, []);
 
     // Playback logic
-    const playSong = (song, newQueue = [], source = null) => {
+    // Tự động tải lời nhạc khi bài hát thay đổi
+    useEffect(() => {
+        if (!currentSong) return;
+        
+        setCurrentLyrics({ synced: [], plain: [], status: 'loading' });
+
+        const trackName = currentSong.tieuDe || '';
+        const artistName = (currentSong.tenNgheSi || '') + (currentSong.ngheSiHopTac ? `, ${currentSong.ngheSiHopTac}` : '');
+        const albumName = currentSong.tenAlbum || '';
+        const duration = currentSong.thoiLuongGiay || 0;
+
+        fetchLyrics(trackName, artistName, albumName, duration)
+            .then(res => {
+                if (res.synced) {
+                    setCurrentLyrics({ synced: parseLRC(res.synced), plain: [], status: 'success' });
+                } else if (res.plain) {
+                    setCurrentLyrics({ synced: [], plain: res.plain.split('\n').filter(l => l.trim().length > 0), status: 'success' });
+                } else {
+                    setCurrentLyrics({ synced: [], plain: [], status: 'notfound' });
+                }
+            })
+            .catch(() => {
+                setCurrentLyrics({ synced: [], plain: [], status: 'error' });
+            });
+    }, [currentSong?.id]);
+
+    const playSong = async (song, newQueue, newSourceInfo) => {
         if (!song) return;
 
         // Gọi API để ghi nhận lượt phát nhạc
@@ -61,7 +152,7 @@ export const MusicProvider = ({ children }) => {
         setCurrentSong(song);
         setIsPlaying(true);
         
-        if (newQueue.length > 0) {
+        if (newQueue && newQueue.length > 0) {
             setQueue(newQueue);
             const idx = newQueue.findIndex(s => s.id === song.id);
             setCurrentIndex(idx);
@@ -70,7 +161,7 @@ export const MusicProvider = ({ children }) => {
             setCurrentIndex(0);
         }
 
-        if (source) setSourceInfo(source);
+        if (newSourceInfo) setSourceInfo(newSourceInfo);
 
         // Update audio source and play
         const API_URL = import.meta.env.VITE_API_URL || '';
@@ -91,14 +182,51 @@ export const MusicProvider = ({ children }) => {
 
     const nextSong = () => {
         if (queue.length === 0 || currentIndex === -1) return;
-        const nextIdx = (currentIndex + 1) % queue.length;
+
+        let nextIdx;
+        if (isShuffle) {
+            // Random index that is not the current one (if possible)
+            if (queue.length > 1) {
+                do {
+                    nextIdx = Math.floor(Math.random() * queue.length);
+                } while (nextIdx === currentIndex);
+            } else {
+                nextIdx = 0;
+            }
+        } else {
+            nextIdx = currentIndex + 1;
+            if (nextIdx >= queue.length) {
+                if (repeatMode === 'all') {
+                    nextIdx = 0;
+                } else {
+                    // Stop at the end
+                    return;
+                }
+            }
+        }
+
         setCurrentIndex(nextIdx);
         playSong(queue[nextIdx], queue, sourceInfo);
     };
 
     const prevSong = () => {
         if (queue.length === 0 || currentIndex === -1) return;
-        const prevIdx = (currentIndex - 1 + queue.length) % queue.length;
+        
+        // If current time > 3s, just restart the song
+        if (audioRef.current.currentTime > 3) {
+            audioRef.current.currentTime = 0;
+            return;
+        }
+
+        let prevIdx = currentIndex - 1;
+        if (prevIdx < 0) {
+            if (repeatMode === 'all') {
+                prevIdx = queue.length - 1;
+            } else {
+                prevIdx = 0;
+            }
+        }
+
         setCurrentIndex(prevIdx);
         playSong(queue[prevIdx], queue, sourceInfo);
     };
@@ -120,34 +248,46 @@ export const MusicProvider = ({ children }) => {
     };
 
     const toggleLike = async (song) => {
-        if (!song) return;
+        if (!song || !likedPlaylistId) return;
         const isLiked = likedSongIds.has(song.id);
         const newLikedIds = new Set(likedSongIds);
 
-        if (isLiked) {
-            newLikedIds.delete(song.id);
-            // Gọi API xóa khỏi playlist yêu thích
-        } else {
-            newLikedIds.add(song.id);
-            // Gọi API thêm vào playlist yêu thích
+        try {
+            if (isLiked) {
+                newLikedIds.delete(song.id);
+                await removeSongFromPlaylistApi(likedPlaylistId, song.id);
+            } else {
+                newLikedIds.add(song.id);
+                await addSongToPlaylistApi(likedPlaylistId, song.id);
+            }
+            setLikedSongIds(newLikedIds);
+        } catch (error) {
+            console.error("Lỗi khi cập nhật yêu thích:", error);
         }
-        setLikedSongIds(newLikedIds);
-        // TODO: Thực hiện gọi API thật ở đây
     };
 
     // Audio event listeners
     useEffect(() => {
         const audio = audioRef.current;
-        const handleEnded = () => nextSong();
+        const handleEnded = () => {
+            if (repeatMode === 'one') {
+                audio.currentTime = 0;
+                audio.play();
+            } else {
+                nextSong();
+            }
+        };
         audio.addEventListener('ended', handleEnded);
         return () => audio.removeEventListener('ended', handleEnded);
-    }, [currentIndex, queue]);
+    }, [currentIndex, queue, isShuffle, repeatMode]);
 
     return (
         <MusicContext.Provider value={{
             currentSong, isPlaying, queue, currentIndex, sourceInfo,
-            likedSongIds, volume, audioRef,
-            playSong, togglePlay, nextSong, prevSong, toggleLike, setVolume, playFromQueue
+            likedSongIds, volume, audioRef, isShuffle, repeatMode,
+            playSong, togglePlay, nextSong, prevSong, toggleLike, 
+            setVolume, playFromQueue, setIsShuffle, setRepeatMode,
+            currentLyrics, user, setUser
         }}>
             {children}
         </MusicContext.Provider>

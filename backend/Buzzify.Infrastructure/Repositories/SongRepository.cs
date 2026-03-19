@@ -14,15 +14,29 @@ namespace Buzzify.Infrastructure.Repositories
         {
         }
 
-        public async Task<(IEnumerable<Song> Item, int TotalCount)> GetPagedAsync(string? searchTerm, int page, int pageSize)
+        public async Task<Song?> GetByIdAsync(object id)
+        {
+            return await _dbSet.AsNoTracking()
+                .Include(s => s.Artist)
+                .Include(s => s.IdAlbumNavigation)
+                .FirstOrDefaultAsync(s => s.Id == (string)id);
+        }
+
+        public async Task<(IEnumerable<Song> Item, int TotalCount)> GetPagedAsync(string? searchTerm, string? artistId, int page, int pageSize)
         {
             var query = _dbSet.AsNoTracking()
                 .Include(s => s.Artist)
+                .Include(s => s.IdAlbumNavigation)
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
                 query = query.Where(s => s.TieuDe.Contains(searchTerm) || s.NgheSiHopTac.Contains(searchTerm));
+            }
+
+            if (!string.IsNullOrWhiteSpace(artistId))
+            {
+                query = query.Where(s => s.ArtistId == artistId);
             }
 
             var totalCount = await query.CountAsync();

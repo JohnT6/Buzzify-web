@@ -6,6 +6,10 @@ namespace Buzzify.Core.Interfaces
 {
     public interface IAlbumRepository : IRepository<Album>
     {
-        Task<(IEnumerable<Album> Item, int TotalCount)> GetPagedAsync(string? searchTerm, int page, int pageSize);
+        Task<(IEnumerable<Album> Item, int TotalCount)> GetPagedAsync(string? searchTerm, string? artistId, int page, int pageSize);
+        Task SaveAlbumAsync(string userId, string albumId);
+        Task UnsaveAlbumAsync(string userId, string albumId);
+        Task<bool> IsAlbumSavedByUserAsync(string userId, string albumId);
+        Task<IEnumerable<Album>> GetSavedAlbumsByUserAsync(string userId);
     }
 }

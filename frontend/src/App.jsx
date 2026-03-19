@@ -26,6 +26,11 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 import { MusicProvider } from './context/MusicContext';
 import MusicLayout from './layouts/MusicLayout';
 import PlaylistView from './pages/Home/PlaylistView';
+import LibraryView from './pages/Home/LibraryView';
+import AlbumView from './pages/Home/AlbumView';
+import ArtistView from './pages/Home/ArtistView';
+import ProfileView from './pages/Home/ProfileView';
+import ExploreView from './pages/Home/ExploreView';
 
 function App() {
   useEffect(() => {
@@ -61,6 +66,11 @@ function App() {
             <Route path="/home" element={<ProtectedRoute><MusicLayout /></ProtectedRoute>}>
               <Route index element={<MusicHome />} />
               <Route path="playlist/:id" element={<PlaylistView />} />
+              <Route path="library" element={<LibraryView />} />
+              <Route path="album/:id" element={<AlbumView />} />
+              <Route path="artist/:id" element={<ArtistView />} />
+              <Route path="profile" element={<ProfileView />} />
+              <Route path="browse" element={<ExploreView />} />
             </Route>
             
             <Route path="*" element={<Navigate to="/" />} />

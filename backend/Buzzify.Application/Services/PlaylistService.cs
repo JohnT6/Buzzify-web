@@ -22,7 +22,7 @@ namespace Buzzify.Application.Services
 
         public async Task<IEnumerable<PlaylistDto>> GetAllPlaylistsAsync()
         {
-            var playlists = await _playlistRepository.GetAllAsync();
+            var playlists = await _playlistRepository.GetAllWithSongsAsync();
             return playlists.Select(p => new PlaylistDto
             {
                 Id = p.Id,
@@ -30,7 +30,11 @@ namespace Buzzify.Application.Services
                 MoTa = p.MoTa,
                 AnhBia = p.AnhBia,
                 CongKhai = p.CongKhai,
-                IdNguoiTao = p.IdNguoiTao
+                IdNguoiTao = p.IdNguoiTao,
+                LoaiPlaylist = p.LoaiPlaylist,
+                CreatorName = p.IdNguoiTaoNavigation?.HoTen,
+                SongCount = p.BaiHatTrongPlaylists.Count(),
+                TopSongImages = p.BaiHatTrongPlaylists.Select(bp => bp.Song.AnhBia).Where(a => !string.IsNullOrEmpty(a)).Take(4).ToList()
             });
         }
 
@@ -47,6 +51,10 @@ namespace Buzzify.Application.Services
                 AnhBia = p.AnhBia,
                 CongKhai = p.CongKhai,
                 IdNguoiTao = p.IdNguoiTao,
+                LoaiPlaylist = p.LoaiPlaylist,
+                CreatorName = p.IdNguoiTaoNavigation?.HoTen,
+                TopSongImages = p.BaiHatTrongPlaylists.Select(bp => bp.Song.AnhBia).Where(a => !string.IsNullOrEmpty(a)).Take(4).ToList(),
+                SongCount = p.BaiHatTrongPlaylists.Count(),
                 Songs = p.BaiHatTrongPlaylists.Select(bp => new SongDto
                 {
                     Id = bp.Song.Id,
@@ -60,7 +68,10 @@ namespace Buzzify.Application.Services
                     TrangThai = bp.Song.TrangThai,
                     TenNgheSi = bp.Song.Artist?.Ten ?? bp.Song.NgheSiHopTac,
                     AnhNgheSi = bp.Song.Artist?.AnhDaiDien,
-                    ArtistId = bp.Song.ArtistId
+                    ArtistId = bp.Song.ArtistId,
+                    TenAlbum = bp.Song.IdAlbumNavigation?.TieuDe,
+                    IdAlbum = bp.Song.IdAlbum,
+                    NgayPhatHanh = bp.Song.IdAlbumNavigation?.NgayPhatHanh
                 }).ToList()
             };
         }
@@ -88,7 +99,8 @@ namespace Buzzify.Application.Services
                 MoTa = newPlaylist.MoTa,
                 AnhBia = newPlaylist.AnhBia,
                 CongKhai = newPlaylist.CongKhai,
-                IdNguoiTao = newPlaylist.IdNguoiTao
+                IdNguoiTao = newPlaylist.IdNguoiTao,
+                LoaiPlaylist = newPlaylist.LoaiPlaylist
             };
         }
 
@@ -145,6 +157,80 @@ namespace Buzzify.Application.Services
                 throw new UnauthorizedException("Bạn không phải là người tạo danh sách phát này nên không thể xóa bài hát khỏi danh sách.");
 
             await _playlistRepository.RemoveSongAsync(playlistId, songId);
+        }
+
+        public async Task<PlaylistDto> GetLikedSongsPlaylistAsync(string userId)
+        {
+            var all = await _playlistRepository.GetAllAsync();
+            var liked = all.FirstOrDefault(p => p.IdNguoiTao == userId && p.LoaiPlaylist == "liked_songs");
+
+            if (liked == null)
+            {
+                liked = new Playlist
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    Ten = "Bài hát đã thích",
+                    IdNguoiTao = userId,
+                    LoaiPlaylist = "liked_songs",
+                    CongKhai = false,
+                    MoTa = "Danh sách các bài hát bạn đã yêu thích"
+                };
+                await _playlistRepository.AddAsync(liked);
+                await _playlistRepository.SaveChangesAsync();
+            }
+
+            return (await GetPlaylistByIdAsync(liked.Id))!;
+        }
+
+        public async Task SavePlaylistAsync(string playlistId, string userId)
+        {
+            await _playlistRepository.SavePlaylistAsync(userId, playlistId);
+        }
+
+        public async Task UnsavePlaylistAsync(string playlistId, string userId)
+        {
+            await _playlistRepository.UnsavePlaylistAsync(userId, playlistId);
+        }
+
+        public async Task<bool> IsPlaylistSavedAsync(string playlistId, string userId)
+        {
+            return await _playlistRepository.IsPlaylistSavedByUserAsync(userId, playlistId);
+        }
+
+        public async Task<IEnumerable<PlaylistDto>> GetSavedPlaylistsAsync(string userId)
+        {
+            var playlists = await _playlistRepository.GetSavedPlaylistsByUserAsync(userId);
+            return playlists.Select(p => new PlaylistDto
+            {
+                Id = p.Id,
+                Ten = p.Ten,
+                MoTa = p.MoTa,
+                AnhBia = p.AnhBia,
+                CongKhai = p.CongKhai,
+                IdNguoiTao = p.IdNguoiTao,
+                LoaiPlaylist = p.LoaiPlaylist,
+                CreatorName = p.IdNguoiTaoNavigation?.HoTen,
+                SongCount = p.BaiHatTrongPlaylists.Count(),
+                TopSongImages = p.BaiHatTrongPlaylists.Select(bp => bp.Song.AnhBia).Where(a => !string.IsNullOrEmpty(a)).Take(4).ToList()
+            });
+        }
+
+        public async Task<IEnumerable<PlaylistDto>> GetPlaylistsByUserAsync(string userId)
+        {
+            var playlists = await _playlistRepository.GetPlaylistsByUserAsync(userId);
+            return playlists.Select(p => new PlaylistDto
+            {
+                Id = p.Id,
+                Ten = p.Ten,
+                MoTa = p.MoTa,
+                AnhBia = p.AnhBia,
+                CongKhai = p.CongKhai,
+                IdNguoiTao = p.IdNguoiTao,
+                LoaiPlaylist = p.LoaiPlaylist,
+                CreatorName = p.IdNguoiTaoNavigation?.HoTen,
+                SongCount = p.BaiHatTrongPlaylists.Count(),
+                TopSongImages = p.BaiHatTrongPlaylists.Select(bp => bp.Song.AnhBia).Where(a => !string.IsNullOrEmpty(a)).Take(4).ToList()
+            });
         }
     }
 }

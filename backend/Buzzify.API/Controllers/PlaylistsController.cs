@@ -25,6 +25,39 @@ namespace Buzzify.API.Controllers
             return Ok(playlists);
         }
 
+        [Authorize]
+        [HttpGet("liked")]
+        public async Task<IActionResult> GetLiked()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var liked = await _playlistService.GetLikedSongsPlaylistAsync(userId);
+            return Ok(liked);
+        }
+
+        [Authorize]
+        [HttpGet("saved")]
+        public async Task<IActionResult> GetSavedPlaylists()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var saved = await _playlistService.GetSavedPlaylistsAsync(userId);
+            return Ok(saved);
+        }
+
+        [Authorize]
+        [HttpGet("my")]
+        public async Task<IActionResult> GetMyPlaylists()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var playlists = await _playlistService.GetPlaylistsByUserAsync(userId);
+            return Ok(playlists);
+        }
+
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(string id)
         {
@@ -87,5 +120,39 @@ namespace Buzzify.API.Controllers
             await _playlistService.RemoveSongFromPlaylistAsync(playlistId, songId, userId);
             return Ok(new { message = "Song removed from playlist successfully." });
         }
+
+        [Authorize]
+        [HttpPost("{id}/save")]
+        public async Task<IActionResult> SavePlaylist(string id)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            await _playlistService.SavePlaylistAsync(id, userId);
+            return Ok(new { message = "Playlist saved successfully." });
+        }
+
+        [Authorize]
+        [HttpDelete("{id}/save")]
+        public async Task<IActionResult> UnsavePlaylist(string id)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            await _playlistService.UnsavePlaylistAsync(id, userId);
+            return Ok(new { message = "Playlist unsaved successfully." });
+        }
+
+        [Authorize]
+        [HttpGet("{id}/is-saved")]
+        public async Task<IActionResult> CheckIfSaved(string id)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var isSaved = await _playlistService.IsPlaylistSavedAsync(id, userId);
+            return Ok(new { isSaved });
+        }
+
     }
 }

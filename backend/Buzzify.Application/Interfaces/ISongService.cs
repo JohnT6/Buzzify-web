@@ -7,7 +7,7 @@ namespace Buzzify.Application.Interfaces
 {
     public interface ISongService
     {
-        Task<PagedResultDto<SongDto>> GetAllSongsAsync(string? searchTerm, int page, int pageSize);
+        Task<PagedResultDto<SongDto>> GetAllSongsAsync(string? searchTerm, string? artistId, int page, int pageSize);
         Task<SongDto?> GetSongByIdAsync(string id);
         Task<SongDto> CreateSongAsync(CreateSongDto createDto, string uploaderId);
         Task UpdateSongAsync(string id, CreateSongDto updateDto, string userId);

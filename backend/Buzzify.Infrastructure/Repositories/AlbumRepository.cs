@@ -14,7 +14,7 @@ namespace Buzzify.Infrastructure.Repositories
         {
         }
 
-        public async Task<(IEnumerable<Album> Item, int TotalCount)> GetPagedAsync(string? searchTerm, int page, int pageSize)
+        public async Task<(IEnumerable<Album> Item, int TotalCount)> GetPagedAsync(string? searchTerm, string? artistId, int page, int pageSize)
         {
             var query = _dbSet.AsNoTracking()
                 .Include(a => a.Artist)
@@ -26,6 +26,11 @@ namespace Buzzify.Infrastructure.Repositories
                 query = query.Where(a => a.TieuDe.Contains(searchTerm));
             }
 
+            if (!string.IsNullOrWhiteSpace(artistId))
+            {
+                query = query.Where(a => a.ArtistId == artistId);
+            }
+
             var totalCount = await query.CountAsync();
 
             var items = await query
@@ -35,6 +40,41 @@ namespace Buzzify.Infrastructure.Repositories
                 .ToListAsync();
 
             return (items, totalCount);
+        }
+
+        public async Task SaveAlbumAsync(string userId, string albumId)
+        {
+            var exists = await IsAlbumSavedByUserAsync(userId, albumId);
+            if (!exists)
+            {
+                await _context.Database.ExecuteSqlRawAsync(
+                    "INSERT INTO album_da_luu (id_nguoi_dung, id_album) VALUES ({0}, {1})",
+                    userId, albumId);
+            }
+        }
+
+        public async Task UnsaveAlbumAsync(string userId, string albumId)
+        {
+            await _context.Database.ExecuteSqlRawAsync(
+                "DELETE FROM album_da_luu WHERE id_nguoi_dung = {0} AND id_album = {1}",
+                userId, albumId);
+        }
+
+        public async Task<bool> IsAlbumSavedByUserAsync(string userId, string albumId)
+        {
+            var count = await _context.Profiles
+                .Where(u => u.Id == userId)
+                .SelectMany(u => u.IdAlbums)
+                .CountAsync(a => a.Id == albumId);
+            return count > 0;
+        }
+
+        public async Task<IEnumerable<Album>> GetSavedAlbumsByUserAsync(string userId)
+        {
+            return await _context.Albums
+                .Where(a => a.IdNguoiDungs.Any(u => u.Id == userId))
+                .Include(a => a.Artist)
+                .ToListAsync();
         }
     }
 }

@@ -19,9 +19,9 @@ namespace Buzzify.API.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAll([FromQuery] string? search = null, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+        public async Task<IActionResult> GetAll([FromQuery] string? search = null, [FromQuery] string? artistId = null, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
         {
-            var pagedResult = await _songService.GetAllSongsAsync(search, page, pageSize);
+            var pagedResult = await _songService.GetAllSongsAsync(search, artistId, page, pageSize);
             return Ok(pagedResult);
         }
 

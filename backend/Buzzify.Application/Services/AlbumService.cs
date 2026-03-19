@@ -20,9 +20,9 @@ namespace Buzzify.Application.Services
             _albumRepository = albumRepository;
         }
 
-        public async Task<PagedResultDto<AlbumDto>> GetAllAlbumsAsync(string? searchTerm, int page, int pageSize)
+        public async Task<PagedResultDto<AlbumDto>> GetAllAlbumsAsync(string? searchTerm, string? artistId, int page, int pageSize)
         {
-            var pagedData = await _albumRepository.GetPagedAsync(searchTerm, page, pageSize);
+            var pagedData = await _albumRepository.GetPagedAsync(searchTerm, artistId, page, pageSize);
 
             var albumDtos = pagedData.Item.Select(a => new AlbumDto
             {
@@ -106,6 +106,36 @@ namespace Buzzify.Application.Services
 
              _albumRepository.Remove(album);
              await _albumRepository.SaveChangesAsync();
+        }
+
+        public async Task SaveAlbumAsync(string albumId, string userId)
+        {
+            await _albumRepository.SaveAlbumAsync(userId, albumId);
+        }
+
+        public async Task UnsaveAlbumAsync(string albumId, string userId)
+        {
+            await _albumRepository.UnsaveAlbumAsync(userId, albumId);
+        }
+
+        public async Task<bool> IsAlbumSavedAsync(string albumId, string userId)
+        {
+            return await _albumRepository.IsAlbumSavedByUserAsync(userId, albumId);
+        }
+
+        public async Task<IEnumerable<AlbumDto>> GetSavedAlbumsAsync(string userId)
+        {
+            var albums = await _albumRepository.GetSavedAlbumsByUserAsync(userId);
+            return albums.Select(a => new AlbumDto
+            {
+                Id = a.Id,
+                TieuDe = a.TieuDe,
+                AnhBia = a.AnhBia,
+                ArtistId = a.ArtistId,
+                ArtistName = a.Artist?.Ten,
+                GenreNames = a.IdTheLoais.Select(g => g.Ten).Take(1).ToList(),
+                NgayPhatHanh = a.NgayPhatHanh
+            });
         }
     }
 }

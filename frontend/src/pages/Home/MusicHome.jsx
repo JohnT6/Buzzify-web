@@ -7,34 +7,54 @@ import {
 } from 'lucide-react';
 import { logoutApi, getCurrentUserApi, getSongsApi, getPlaylistsApi, getAlbumsApi } from '../../services/api_services';
 import { useMusic } from '../../context/MusicContext';
+import SongMenu from '../../components/MusicPlayer/SongMenu';
+import ImgFallback, { imgUrl } from '../../components/Common/ImgFallback';
 
 /* ─── Màu chủ đạo theo logo = #0F5E8F (buzzify blue) ───────────────────────── */
 const ACCENT = '#0F5E8F';
 
 /* ─── Helpers ────────────────────────────────────────────────────────────────── */
-const fmt = (s) => { if (!s) return '–'; const m = Math.floor(s / 60); return `${m}:${String(s % 60).padStart(2, '0')}`; };
-
-const API_BASE = import.meta.env.VITE_API_URL || '';
-const imgUrl = (src) => {
-    if (!src) return null;
-    if (src.startsWith('http://') || src.startsWith('https://')) return src;
-    return `${API_BASE}${src.startsWith('/') ? '' : '/'}${src}`;
-};
-
-const ImgFallback = ({ src, alt, className, iconSize = 28 }) => {
-    const [err, setErr] = useState(false);
-    const fullSrc = imgUrl(src);
-    if (!fullSrc || err) return (
-        <div className={`${className} bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center`}>
-            <Music2 size={iconSize} className="text-gray-600" />
-        </div>
-    );
-    return <img src={fullSrc} alt={alt} className={`${className} object-cover`} onError={() => setErr(true)} />;
+const fmt = (s) => { 
+    if (!s) return '0:00'; 
+    const m = Math.floor(s / 60); 
+    const sec = Math.floor(s % 60);
+    return `${m}:${String(sec).padStart(2, '0')}`; 
 };
 
 /* ─── Song Card (New Releases) ───────────────────────────────────────────────── */
+
+/* ─── Song Card (New Releases) ───────────────────────────────────────────────── */
+/* ─── Album Card (New Releases) ───────────────────────────────────────────────── */
+const AlbumCard = ({ album, onClick }) => {
+    const navigate = useNavigate();
+    return (
+        <div className="flex-shrink-0 w-44 group cursor-pointer transition-all" onClick={() => onClick(album)}>
+            <div className="relative w-44 h-44 rounded-md overflow-hidden mb-2.5 bg-gray-800">
+                <ImgFallback src={album.anhBia} alt={album.tieuDe} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
+                    <div className="w-12 h-12 rounded-full bg-black/50 hover:scale-105 transition-transform flex items-center justify-center backdrop-blur-sm">
+                        <Play size={20} fill="white" className="text-white ml-0.5" />
+                    </div>
+                </div>
+            </div>
+            <div className="flex items-center gap-1.5 mt-2">
+                <p className="text-sm font-bold text-white truncate max-w-[130px] uppercase tracking-tighter">{album.tieuDe}</p>
+                <div className="px-1.5 py-0.5 rounded bg-[#0F5E8F]/20 text-[#0F5E8F] text-[8px] font-black border border-[#0F5E8F]/20">ALBUM</div>
+            </div>
+            <p className="text-xs text-gray-400 truncate mt-0.5 uppercase tracking-widest font-medium opacity-60 hover:text-white hover:opacity-100 transition-all"
+               onClick={(e) => { 
+                   if (album.artistId) { e.stopPropagation(); navigate(`/home/artist/${album.artistId}`); }
+               }}>
+                {album.artistName || 'Nghệ sĩ'}
+            </p>
+        </div>
+    );
+};
+
+/* ─── Song Card ───────────────────────────────────────────────────────────── */
 const SongCard = ({ song, onPlay }) => {
-    const artistName = song.tenNgheSi || song.ngheSiHopTac || 'Nghệ sĩ';
+    const navigate = useNavigate();
+    const artistName = song.tenNgheSi + (song.ngheSiHopTac ? `, ${song.ngheSiHopTac}` : '');
     const cover = song.anhBia;
 
     return (
@@ -52,7 +72,12 @@ const SongCard = ({ song, onPlay }) => {
                 <ArrowUp size={12} className="text-gray-400 flex-shrink-0" />
                 <Lock size={12} className="text-gray-400 flex-shrink-0" />
             </div>
-            <p className="text-xs text-gray-400 truncate mt-0.5">{artistName}</p>
+            <p className="text-xs text-gray-400 truncate mt-0.5 hover:text-white transition-colors"
+               onClick={(e) => {
+                   if (song.artistId) { e.stopPropagation(); navigate(`/home/artist/${song.artistId}`); }
+               }}>
+                {artistName}
+            </p>
         </div>
     );
 };
@@ -82,55 +107,101 @@ const MixCard = ({ playlist, onClick }) => {
 };
 
 /* ─── You May Like avatar circle ─────────────────────────────────────────────── */
-const ArtistCircle = ({ song }) => {
+/* ─── You May Like avatar circle ─────────────────────────────────────────────── */
+/* ─── You May Like avatar circle ─────────────────────────────────────────────── */
+const ArtistCircle = ({ song, onClick }) => {
+    const navigate = useNavigate();
     const name = song.tenNgheSi || song.tieuDe;
     const cover = song.anhNgheSi || song.anhBia;
     return (
-        <div className="flex-shrink-0 flex flex-col items-center gap-2 cursor-pointer group w-[72px]">
+        <div className="flex-shrink-0 flex flex-col items-center gap-2 cursor-pointer group w-[72px]" onClick={() => onClick(song)}>
             <div className="w-14 h-14 rounded-full overflow-hidden bg-gray-800 ring-2 ring-transparent group-hover:ring-white/30 transition-all">
                 <ImgFallback src={cover} alt={name} className="w-full h-full group-hover:scale-110 transition-transform duration-300" iconSize={20} />
             </div>
-            <p className="text-[11px] font-medium text-gray-300 text-center leading-tight line-clamp-2">{name}</p>
+            <p className="text-[11px] font-medium text-gray-300 text-center leading-tight line-clamp-2 group-hover:text-white transition-colors">{name}</p>
         </div>
     );
 };
 
 /* ─── Top Stream Row ─────────────────────────────────────────────────────────── */
-const TopStreamRow = ({ song, idx, onPlay }) => (
-    <div className="flex items-center gap-3 py-2 px-2 rounded-lg hover:bg-white/5 group cursor-pointer transition-colors" onClick={() => onPlay(song)}>
-        <span className="text-xs text-gray-600 w-4 text-right font-medium">{idx + 1}</span>
-        <div className="w-9 h-9 rounded-lg overflow-hidden bg-gray-800 flex-shrink-0">
-            <ImgFallback src={song.anhBia} alt={song.tieuDe} className="w-full h-full" iconSize={14} />
+const TopStreamRow = ({ song, idx, onPlay, onOpenMenu, isLiked, onToggleLike }) => {
+    const navigate = useNavigate();
+    const ACCENT = '#0F5E8F';
+    return (
+        <div className="flex items-center gap-3 py-2 px-2 rounded-lg hover:bg-white/5 group cursor-pointer transition-colors" onClick={() => onPlay(song)}>
+            <span className="text-xs text-gray-600 w-4 text-right font-medium">{idx + 1}</span>
+            <div className="w-9 h-9 rounded-lg overflow-hidden bg-gray-800 flex-shrink-0 border border-white/5">
+                <ImgFallback src={song.anhBia} alt={song.tieuDe} className="w-full h-full" iconSize={14} />
+            </div>
+            <div className="flex-1 min-w-0 ml-1">
+                <p className="text-xs font-bold text-white truncate leading-tight">{song.tieuDe}</p>
+                <p className="text-[10px] text-gray-500 truncate mt-0.5 hover:text-white transition-colors"
+                   onClick={(e) => {
+                       if (song.artistId) { e.stopPropagation(); navigate(`/home/artist/${song.artistId}`); }
+                   }}>
+                    {song.tenNgheSi}{song.ngheSiHopTac ? `, ${song.ngheSiHopTac}` : ''}
+                </p>
+            </div>
+            <div className={`flex items-center gap-3 transition-all ${isLiked ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                <button 
+                    onClick={(e) => { e.stopPropagation(); onToggleLike(song); }}
+                    className="hover:scale-110 transition-transform active:scale-95"
+                >
+                    <Heart size={14} fill={isLiked ? ACCENT : "none"} color={isLiked ? ACCENT : "white"} strokeWidth={isLiked ? 0 : 2} />
+                </button>
+                <span className="text-[11px] text-gray-600 font-medium">{fmt(song.thoiLuongGiay)}</span>
+                <button 
+                    className="text-gray-700 hover:text-gray-300 transition-all cursor-pointer"
+                    onClick={(e) => onOpenMenu(e, song)}
+                >
+                    <MoreHorizontal size={14} />
+                </button>
+            </div>
+            <span className="text-[11px] text-gray-600 group-hover:hidden">{fmt(song.thoiLuongGiay)}</span>
         </div>
-        <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-white truncate">{song.tieuDe}</p>
-            <p className="text-[11px] text-gray-500 truncate">{song.tenNgheSi || song.ngheSiHopTac || 'Nghệ sĩ'}</p>
-        </div>
-        <span className="text-[11px] text-gray-600">{fmt(song.thoiLuongGiay)}</span>
-        <button className="text-gray-700 hover:text-gray-300 opacity-0 group-hover:opacity-100 transition-all">
-            <MoreHorizontal size={14} />
-        </button>
-    </div>
-);
+    );
+};
 
 /* ─── Recently Played Row ───────────────────────────────────────────────────── */
-const RecentRow = ({ song, idx, onPlay }) => (
-    <div className="flex items-center gap-4 px-3 py-2.5 rounded-lg hover:bg-white/5 group cursor-pointer transition-colors" onClick={() => onPlay(song)}>
-        <span className="text-sm text-gray-600 w-5 text-center">{idx + 1}</span>
-        <div className="w-9 h-9 rounded-md overflow-hidden bg-gray-800 flex-shrink-0">
-            <ImgFallback src={song.anhBia} alt={song.tieuDe} className="w-full h-full" iconSize={13} />
+const RecentRow = ({ song, idx, onPlay, onOpenMenu, isLiked, onToggleLike }) => {
+    const navigate = useNavigate();
+    const ACCENT = '#0F5E8F';
+    return (
+        <div className="flex items-center gap-4 px-3 py-2.5 rounded-lg hover:bg-white/5 group cursor-pointer transition-colors" onClick={() => onPlay(song)}>
+            <span className="text-sm text-gray-600 w-5 text-center">{idx + 1}</span>
+            <div className="w-9 h-9 rounded-md overflow-hidden bg-gray-800 flex-shrink-0 border border-white/5">
+                <ImgFallback src={song.anhBia} alt={song.tieuDe} className="w-full h-full" iconSize={13} />
+            </div>
+            <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-white truncate">{song.tieuDe}</p>
+                <p className="text-xs text-gray-500 truncate mt-0.5 hover:text-white transition-colors"
+                   onClick={(e) => {
+                       if (song.artistId) { e.stopPropagation(); navigate(`/home/artist/${song.artistId}`); }
+                   }}>
+                    {song.tenNgheSi}{song.ngheSiHopTac ? `, ${song.ngheSiHopTac}` : ''}
+                </p>
+            </div>
+            <p className="text-xs text-gray-500 hidden lg:block truncate max-w-[120px] italic">{song.ngheSiHopTac || ''}</p>
+            
+            <div className={`flex items-center gap-5 transition-all ${isLiked ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                <button 
+                    onClick={(e) => { e.stopPropagation(); onToggleLike(song); }}
+                    className="hover:scale-110 transition-transform active:scale-95"
+                >
+                    <Heart size={16} fill={isLiked ? ACCENT : "none"} color={isLiked ? ACCENT : "white"} strokeWidth={isLiked ? 0 : 2} />
+                </button>
+                <span className="text-xs text-gray-500">{fmt(song.thoiLuongGiay)}</span>
+                <button 
+                    className="text-gray-700 hover:text-white transition-all cursor-pointer"
+                    onClick={(e) => onOpenMenu(e, song)}
+                >
+                    <MoreHorizontal size={14} />
+                </button>
+            </div>
+            <span className="text-xs text-gray-500 group-hover:hidden">{fmt(song.thoiLuongGiay)}</span>
         </div>
-        <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-white truncate">{song.tieuDe}</p>
-            <p className="text-xs text-gray-500 truncate">{song.tenNgheSi || song.ngheSiHopTac || '–'}</p>
-        </div>
-        <p className="text-xs text-gray-500 hidden md:block truncate max-w-[80px]">{song.ngheSiHopTac || '–'}</p>
-        <span className="text-xs text-gray-500">{fmt(song.thoiLuongGiay)}</span>
-        <button className="text-gray-700 hover:text-white opacity-0 group-hover:opacity-100 transition-all">
-            <Heart size={14} />
-        </button>
-    </div>
-);
+    );
+};
 
 /* ─── Categories ────────────────────────────────────────────────────────────── */
 const CATS = [
@@ -194,6 +265,7 @@ const SectionRow = ({ title, children, showViewAll = true }) => {
 const GENRES = ['R&B', 'Pop', 'Rap', 'Ballad', 'Country', 'Hip Hop'];
 
 const BannerSlider = ({ items, onPlay }) => {
+    const navigate = useNavigate();
     const [currentSlide, setCurrentSlide] = useState(0);
 
     // Auto-play 3s
@@ -244,7 +316,12 @@ const BannerSlider = ({ items, onPlay }) => {
 
                 {/* Bottom Right: Banner Area */}
                 <div className="absolute bottom-10 right-10 flex flex-col items-end text-right max-w-xl">
-                    <h2 className="text-4xl md:text-5xl font-extrabold text-white mb-1 tracking-tight drop-shadow-2xl truncate w-full">{currentItem.tieuDe || 'Album'}</h2>
+                    <h2 
+                        onClick={() => navigate(`/home/album/${currentItem.id}`)}
+                        className="text-4xl md:text-5xl font-extrabold text-white mb-1 tracking-tight drop-shadow-2xl truncate w-full cursor-pointer hover:underline"
+                    >
+                        {currentItem.tieuDe || 'Album'}
+                    </h2>
                     <p className="text-lg text-gray-300 mb-6 font-medium drop-shadow-md">{currentItem.artistName || 'Nghệ sĩ'}</p>
 
                     <div className="flex items-center gap-5">
@@ -270,7 +347,7 @@ const Skeleton = ({ className }) => <div className={`bg-white/5 rounded-lg anima
 /* ─── Main ───────────────────────────────────────────────────────────────────── */
 const MusicHome = () => {
     const navigate = useNavigate();
-    const { playSong } = useMusic();
+    const { playSong, likedSongIds, toggleLike } = useMusic();
     const [user, setUser] = useState(null);
     const [songs, setSongs] = useState([]);
     const [playlists, setPlaylists] = useState([]);
@@ -278,6 +355,17 @@ const MusicHome = () => {
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [activeNav, setActiveNav] = useState('home');
+    const [menuConfig, setMenuConfig] = useState({ open: false, x: 0, y: 0, song: null });
+
+    const handleOpenMenu = (e, song) => {
+        e.stopPropagation();
+        setMenuConfig({
+            open: true,
+            x: e.clientX,
+            y: e.clientY,
+            song: song
+        });
+    };
 
     useEffect(() => {
         (async () => {
@@ -310,7 +398,7 @@ const MusicHome = () => {
         playSong(song, songs, { type: 'home', name: 'Trang chủ' });
     };
 
-    const newReleases = songs.slice(0, 8);
+    const newReleases = albums.slice(0, 8);
     const youMayLike = songs.slice(8, 16);
     const recent = songs.slice(16, 22);
     const topStreams = songs.slice(0, 7);
@@ -319,17 +407,17 @@ const MusicHome = () => {
         <div className="flex-1 flex min-h-0 overflow-hidden">
 
             {/* Scrollable main */}
-            <div className="flex-1 overflow-y-auto px-8 py-6 h-full custom-main-scroll" data-lenis-prevent>
+            <div className="flex-1 overflow-y-auto hide-scrollbar px-8 py-6 h-full custom-main-scroll" data-lenis-prevent>
 
                 {/* Banner Slider */}
                 <BannerSlider items={albums.length > 0 ? albums : songs.slice(0, 6)} onPlay={handlePlay} />
 
-                {/* Phát hành mới nhất */}
+                {/* Phát hành mới nhất (Albums) */}
                 <SectionRow title="Phát hành mới nhất" showViewAll={true}>
                     {loading ? (
                         Array.from({ length: 5 }).map((_, i) => <div key={i} className="flex-shrink-0 w-44"><Skeleton className="w-44 h-44 mb-2.5" /><Skeleton className="h-4 w-28" /></div>)
                     ) : (
-                        newReleases.map(s => <SongCard key={s.id} song={s} onPlay={handlePlay} />)
+                        newReleases.map(alb => <AlbumCard key={alb.id} album={alb} onClick={(a) => navigate(`/home/album/${a.id}`)} />)
                     )}
                 </SectionRow>
 
@@ -339,9 +427,9 @@ const MusicHome = () => {
                         {loading ? (
                             Array.from({ length: 5 }).map((_, i) => <div key={i} className="flex-shrink-0 w-48"><Skeleton className="w-48 h-48 mb-3" /><Skeleton className="h-4 w-32" /></div>)
                         ) : (
-                                    playlists.filter(p => (p.congKhai === true || p.idNguoiTao === user?.id) && !(p.ten?.toLowerCase().includes('thích') || p.loaiPlaylist === 'liked')).map(p => (
-                                        <MixCard key={p.id} playlist={p} onClick={(p) => navigate(`/home/playlist/${p.id}`)} />
-                                    ))
+                            playlists.filter(p => (p.congKhai === true || p.idNguoiTao === user?.id) && !(p.ten?.toLowerCase().includes('thích') || p.loaiPlaylist === 'liked')).map(p => (
+                                <MixCard key={p.id} playlist={p} onClick={(p) => navigate(`/home/playlist/${p.id}`)} />
+                            ))
                         )}
                     </SectionRow>
                 )}
@@ -350,7 +438,16 @@ const MusicHome = () => {
                 {youMayLike.length > 0 && (
                     <section className="mb-10">
                         <SectionRow title="Nghệ sĩ yêu thích" showViewAll={false}>
-                            {youMayLike.map(s => <ArtistCircle key={s.id} song={s} />)}
+                            {youMayLike.map(s => (
+                                <ArtistCircle 
+                                    key={s.id} 
+                                    song={s} 
+                                    onClick={(song) => {
+                                        if (song.artistId) navigate(`/home/artist/${song.artistId}`);
+                                        else console.warn("No artistId found for song", song);
+                                    }} 
+                                />
+                            ))}
                         </SectionRow>
                     </section>
                 )}
@@ -362,7 +459,17 @@ const MusicHome = () => {
                             <h2 className="text-xl font-bold text-white tracking-tight">Đã nghe gần đây</h2>
                         </div>
                         <div className="space-y-0.5 max-w-4xl">
-                            {recent.map((s, i) => <RecentRow key={s.id} song={s} idx={i} onPlay={handlePlay} />)}
+                            {recent.map((s, i) => (
+                                <RecentRow 
+                                    key={s.id} 
+                                    song={s} 
+                                    idx={i} 
+                                    onPlay={handlePlay} 
+                                    onOpenMenu={handleOpenMenu}
+                                    isLiked={likedSongIds.has(s.id)}
+                                    onToggleLike={toggleLike}
+                                />
+                            ))}
                         </div>
                     </section>
                 )}
@@ -386,7 +493,17 @@ const MusicHome = () => {
                     </div>
                     {loading
                         ? Array.from({ length: 5 }).map((_, i) => <div key={i} className="flex gap-3 items-center py-2"><Skeleton className="w-4 h-4" /><Skeleton className="w-9 h-9 rounded-lg" /><div className="flex-1"><Skeleton className="h-3 mb-1" /><Skeleton className="h-2.5 w-16" /></div></div>)
-                        : topStreams.map((s, i) => <TopStreamRow key={s.id} song={s} idx={i} onPlay={handlePlay} />)
+                        : topStreams.map((s, i) => (
+                            <TopStreamRow 
+                                key={s.id} 
+                                song={s} 
+                                idx={i} 
+                                onPlay={handlePlay} 
+                                onOpenMenu={handleOpenMenu}
+                                isLiked={likedSongIds.has(s.id)}
+                                onToggleLike={toggleLike}
+                            />
+                        ))
                     }
                 </div>
 
@@ -408,6 +525,14 @@ const MusicHome = () => {
                     </div>
                 </div>
             </div>
+            {/* Options Menu */}
+            {menuConfig.open && (
+                <SongMenu 
+                    song={menuConfig.song}
+                    position={{ x: menuConfig.x, y: menuConfig.y }}
+                    onClose={() => setMenuConfig({ ...menuConfig, open: false })}
+                />
+            )}
         </div>
     );
 };

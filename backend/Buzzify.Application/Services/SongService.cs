@@ -20,9 +20,9 @@ namespace Buzzify.Application.Services
             _songRepository = songRepository;
         }
 
-        public async Task<PagedResultDto<SongDto>> GetAllSongsAsync(string? searchTerm, int page, int pageSize)
+        public async Task<PagedResultDto<SongDto>> GetAllSongsAsync(string? searchTerm, string? artistId, int page, int pageSize)
         {
-            var pagedData = await _songRepository.GetPagedAsync(searchTerm, page, pageSize);
+            var pagedData = await _songRepository.GetPagedAsync(searchTerm, artistId, page, pageSize);
             
             var songDtos = pagedData.Item.Select(s => new SongDto
             {
@@ -35,9 +35,12 @@ namespace Buzzify.Application.Services
                 LuotNghe = s.LuotNghe,
                 NgayTaiLen = s.NgayTaiLen,
                 TrangThai = s.TrangThai,
-                TenNgheSi = s.Artist?.Ten,
+                TenNgheSi = s.Artist?.Ten ?? s.NgheSiHopTac,
                 AnhNgheSi = s.Artist?.AnhDaiDien,
-                ArtistId = s.ArtistId
+                ArtistId = s.ArtistId,
+                TenAlbum = s.IdAlbumNavigation?.TieuDe,
+                IdAlbum = s.IdAlbum,
+                NgayPhatHanh = s.IdAlbumNavigation?.NgayPhatHanh
             });
 
             return new PagedResultDto<SongDto>
@@ -64,7 +67,13 @@ namespace Buzzify.Application.Services
                 AnhBia = s.AnhBia,
                 LuotNghe = s.LuotNghe,
                 NgayTaiLen = s.NgayTaiLen,
-                TrangThai = s.TrangThai
+                TrangThai = s.TrangThai,
+                TenNgheSi = s.Artist?.Ten ?? s.NgheSiHopTac,
+                AnhNgheSi = s.Artist?.AnhDaiDien,
+                ArtistId = s.ArtistId,
+                TenAlbum = s.IdAlbumNavigation?.TieuDe,
+                IdAlbum = s.IdAlbum,
+                NgayPhatHanh = s.IdAlbumNavigation?.NgayPhatHanh
             };
         }
 

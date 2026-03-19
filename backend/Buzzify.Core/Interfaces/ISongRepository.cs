@@ -6,6 +6,6 @@ namespace Buzzify.Core.Interfaces
 {
     public interface ISongRepository : IRepository<Song>
     {
-        Task<(IEnumerable<Song> Item, int TotalCount)> GetPagedAsync(string? searchTerm, int page, int pageSize);
+        Task<(IEnumerable<Song> Item, int TotalCount)> GetPagedAsync(string? searchTerm, string? artistId, int page, int pageSize);
     }
 }

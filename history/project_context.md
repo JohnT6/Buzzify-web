@@ -1,42 +1,64 @@
 # NGỮ CẢNH DỰ ÁN & QUY TẮC CHO AI (BUZZIFY - WEB NÂNG CAO)
 
-Tài liệu này lưu trữ các quy tắc và thông tin quan trọng nhất của dự án Buzzify để đảm bảo tính nhất quán qua các phiên làm việc.
+Tài liệu này lưu trữ các quy tắc, cấu trúc hệ thống và lịch sử sửa lỗi của dự án Buzzify để đảm bảo tính nhất quán.
 
-## 1. QUY TẮC BẮT BUỘC (AI RULES)
+## 1. QUY TẮC KIÊN QUYẾT (CRITICAL RULES)
 - **NGÔN NGỮ**: Luôn giao tiếp và giải thích bằng **Tiếng Việt**.
-- **KHÔNG CHẠY NGẦM**: Không tự ý chạy `npm run dev` hoặc `dotnet run`.
-- **BẢO MẬT**: Tuyệt đối không ghi cứng mã khóa (API Keys, Secrets) vào code. Luôn sử dụng `.env` cho frontend và `appsettings.Local.json` cho backend.
-- **SMOOTH SCROLL**: Dự án dùng `Lenis`. Bất kỳ vùng nội dung nào có `overflow` riêng phải thêm thuộc tính **`data-lenis-prevent`** để scroll chuột hoạt động.
+- **QUẢN LÝ TIẾN TRÌNH**: **PHẢI TẮT** backend và frontend (terminal processes) ngay sau khi test xong hoặc kết thúc phiên làm việc. Không để chạy ngầm lãng phí tài nguyên.
+- **BẢO MẬT**: Không ghi cứng API Keys/Secrets. Sử dụng `.env` (Frontend) và `appsettings.Local.json` (Backend).
+- **SCROLL (Lenis)**: Sử dụng `data-lenis-prevent` cho Modal/Scrollable areas. Ngăn chặn sự kiện cuộn lan ra ngoài.
 
-## 2. CẤU TRÚC DỰ ÁN & TECH STACK
-- **Frontend**: React (Vite), Tailwind CSS, Lucide Icons, Context API.
-- **Backend**: ASP.NET Core 8.0 (Clean Architecture).
-- **Database**: SQL Server (EF Core).
-- **Security**: JWT Authentication, hỗ trợ đăng nhập Google/Facebook qua bên thứ ba.
+## 2. CẤU TRÚC HỆ THỐNG (ARCHITECTURE)
 
-## 3. CÁC QUY ƯỚC UI/UX QUAN TRỌNG (ĐÃ CHỐT)
+### 2.1. Backend (ASP.NET Core 9.0)
+- **Cấu trúc**: Clean Architecture.
+    - **Buzzify.API**: Controllers, Middlewares (xử lý Request/Response).
+    - **Buzzify.Application**: Interfaces, DTOs, Services (xử lý Logic nghiệp vụ).
+    - **Buzzify.Core**: Entities (Thực thể DB), Interfaces Repository.
+    - **Buzzify.Infrastructure**: DbContext, Migrations, Repositories implementation.
+- **Dữ liệu**: SQL Server với quan hệ chặt chẽ giữa Artist -> Album -> Song.
 
-### 3.1. Music Player & Modal
-- **Màu sắc chủ đạo**: Màu xanh thương hiệu (Buzzify Blue) là **`#0F5E8F`** (ACCENT). Sử dụng cho các nút Play, thanh tiến trình, và hiệu ứng sóng nhạc (music columns).
-- **Tương tác Modal**: 
-    - Modal bài hát có hiệu ứng trượt lên/xuống (slide animation).
-    - Thanh Player Bar bên dưới luôn nằm đè lên trên Modal (z-index cao hơn) và giữ nguyên vị trí khi modal mở.
-    - Ảnh bìa trong modal được căn chỉnh ngang hàng với danh sách hàng chờ (Play Queue).
-- **Hiệu ứng Hover**: Ảnh bài hát trong danh sách hàng chờ (History/Next Up) phải hiện icon Play khi hover.
+### 2.2. Frontend (React 19 + Vite)
+- **Styling**: Tailwind CSS v4, Vanilla CSS cho các hiệu ứng đặc biệt.
+- **Cấu trúc**:
+    - `src/pages`: Các trang chính (Home, Album, Artist, Profile, Explore).
+    - `src/layouts`: Bố cục chung (MusicLayout).
+    - `src/services`: Giao tiếp API qua `axios_customize` (tự động bóc tách `res.data`).
+    - `src/components`: Các thành phần tái sử dụng (MusicPlayer, Common ImgFallback).
+    - `src/context`: Quản lý trạng thái toàn cục (MusicContext - Player, Like status).
 
-### 3.2. Quản lý Playlist & Dữ liệu
-- **Lọc Playlist**: Playlist "Bài hát yêu thích" (Liked Songs) được tách riêng vào mục "Yêu thích" hoặc Library. Nó PHẢI bị lọc bỏ khỏi danh sách "Custom mixes" trên trang chủ và danh sách "Playlist của tôi" ở sidebar để tránh trùng lặp.
-- **Dữ liệu thực**: Mọi dữ liệu (Nghệ sĩ, Album, Playlist, Bài hát) phải lấy từ Database, không dùng dữ liệu giả.
+## 3. CÁC PHẦN MỚI HOÀN THÀNH (RECENT UPDATES)
+- **Nâng cấp UI (Premium Look)**:
+    - **AlbumView**: Header với ảnh nền blur, bảng bài hát tối giản, chuyên nghiệp.
+    - **ArtistView**: Banner anh hùng (Hero), danh sách Top Tracks và Albums theo grid.
+    - **ProfileView**: Giao diện người dùng với banner rộng, avatar vòng tròn, trạng thái trống (empty state).
+    - **ExploreView**: Các thẻ Featured nằm ngang và các chip thể loại (Genres).
+- **Chức năng**:
+    - Tích hợp API thực tế cho trang Nghệ sĩ (Lấy thông tin, bài hát, album của nghệ sĩ).
+    - Đồng bộ hóa điều hướng: Nhấn vào tên nghệ sĩ ở bất cứ đâu đều dẫn về trang Artist chi tiết.
+    - Thành phần `ImgFallback`: Tự động xử lý ảnh lỗi và hiển thị icon thay thế trên toàn hệ thống.
+    - Trang Home: "Phát hành mới nhất" giờ đây hiển thị **Album** thay vì bài hát lẻ.
 
-## 4. QUY TRÌNH THIẾT LẬP BẢO MẬT (NEW)
-1. **Frontend**: Các mã khóa Google/Facebook nằm trong tệp `.env`. Truy cập qua `import.meta.env`.
-2. **Backend**: Các thông tin như Connection String, Jwt Key, Email Password nằm trong tệp `appsettings.Local.json`. Tệp này không được đẩy lên Git (đã cấu hình trong `.gitignore`).
-3. **README.md**: Tệp hướng dẫn cài đặt nằm ở thư mục gốc để hướng dẫn người dùng mới cấu hình dự án.
+## 4. CÁC LỖI ĐÃ FIX (BUG FIXES)
+- **Lỗi "Không tìm thấy Album"**: Do bóc tách dữ liệu dư thừa `.then(res => res.data)` trong khi axios interceptor đã làm việc này.
+- **Lỗi điều hướng**: Fix `ReferenceError: navigate is not defined` tại `UserMenu`, `BannerSlider` và các thẻ Card.
+- **Lỗi Dữ liệu Nghệ sĩ**: Chuyển từ dữ liệu mẫu (mock) sang API thực tế. Tạo mới `ArtistsController` công khai.
+- **Lỗi Like**: Fix truyền tham số sai (truyền ID thay vì Object) trong hàm `toggleLike` tại `ArtistView`.
+- **Lỗi Build**: Xóa bỏ các thẻ div dư thừa và import thiếu các icon Lucide.
 
-## 5. CÁC LỖI ĐÃ FIX & LƯU Ý
-- **Scroll Fix**: Đã sửa lỗi không cuộn được chuột trong modal bằng `data-lenis-prevent`.
-- **Logic Queue**: Fix lỗi mất playlist khi click chọn bài hát bất kỳ trong History hoặc Next Up. Hiện tại, khi click vào bài hát trong queue, nó sẽ phát ngay trong ngữ cảnh của danh sách đó.
-- **Z-Index**: Đảm bảo MusicPlayerBar luôn ở trên cùng để người dùng luôn có thể điều khiển nhạc.
+## 5. VIỆC CẦN LÀM & LỖI ĐANG XỬ LÝ
+- [ ] **Lọc theo ArtistId**: Cần tối ưu hóa hiệu suất truy vấn ở Backend cho các danh sách lớn.
+- [ ] **Lyrics Karaoke**: Tiếp tục tinh chỉnh độ mượt của hiệu ứng đổ màu (Deep Sync).
+- [ ] **Chỉnh sửa Hồ sơ**: Tính năng upload ảnh đại diện và đổi tên chưa hoàn thiện.
+- [ ] **Tìm kiếm nâng cao**: Cần tích hợp tìm kiếm theo cả Album và Artist thay vì chỉ Song.
+
+## 6. THÔNG TIN COMMIT (GITHUB)
+- **Tiêu đề (Commit Title)**: `feat: nâng cấp giao diện (Album, Artist, Profile, Explore) và sửa lỗi điều hướng/dữ liệu`
+- **Chi tiết (Commit Body)**: 
+    - Thiết kế lại trang Album, Artist, Profile và Explore với phong cách cao cấp.
+    - Tạo API công khai cho Nghệ sĩ và hỗ trợ lọc theo `artistId` cho bài hát/album.
+    - Sửa lỗi "Không tìm thấy album" và các lỗi ReferenceError (`navigate`).
+    - Chuẩn hóa việc hiển thị hình ảnh với thành phần `ImgFallback` dùng chung.
 
 ---
-*Cập nhật lần cuối: 18/03/2026 - Phiên làm việc hoàn thiện UI Player & Bảo mật.*
+*Cập nhật lần cuối: 19/03/2026 - Hoàn tất đợt nâng cấp UI & Data Integration.*

@@ -54,11 +54,19 @@ const getCurrentUserApi = () => {
     return axios.get(URL_BACKEND);
 }
 
+// ─── Artist ───────────────────────────────────────────────────────────────────
+
+const getArtistByIdApi = (id) => {
+    const URL_BACKEND = `/api/v1/artists/${id}`;
+    return axios.get(URL_BACKEND);
+}
+
 // ─── Songs ────────────────────────────────────────────────────────────────────
 
-const getSongsApi = (search = null, page = 1, pageSize = 20) => {
+const getSongsApi = (search = null, page = 1, pageSize = 20, artistId = null) => {
     let URL_BACKEND = `/api/v1/songs?page=${page}&pageSize=${pageSize}`;
     if (search) URL_BACKEND += `&search=${encodeURIComponent(search)}`;
+    if (artistId) URL_BACKEND += `&artistId=${artistId}`;
     return axios.get(URL_BACKEND);
 }
 
@@ -84,11 +92,22 @@ const getPlaylistByIdApi = (id) => {
     return axios.get(URL_BACKEND);
 }
 
+const getMyPlaylistsApi = () => {
+    const URL_BACKEND = `/api/v1/playlists/my`;
+    return axios.get(URL_BACKEND);
+}
+
+const getLikedPlaylistApi = () => {
+    const URL_BACKEND = "/api/v1/playlists/liked";
+    return axios.get(URL_BACKEND);
+}
+
 // ─── Albums ───────────────────────────────────────────────────────────────────
 
-const getAlbumsApi = (search = null, page = 1, pageSize = 20) => {
+const getAlbumsApi = (search = null, page = 1, pageSize = 20, artistId = null) => {
     let URL_BACKEND = `/api/v1/albums?page=${page}&pageSize=${pageSize}`;
     if (search) URL_BACKEND += `&search=${encodeURIComponent(search)}`;
+    if (artistId) URL_BACKEND += `&artistId=${artistId}`;
     return axios.get(URL_BACKEND);
 }
 
@@ -100,6 +119,51 @@ const addSongToPlaylistApi = (playlistId, songId) => {
 const removeSongFromPlaylistApi = (playlistId, songId) => {
     const URL_BACKEND = `/api/v1/playlists/${playlistId}/Songs/${songId}`;
     return axios.delete(URL_BACKEND);
+}
+
+const savePlaylistApi = (id) => {
+    const URL_BACKEND = `/api/v1/playlists/${id}/save`;
+    return axios.post(URL_BACKEND);
+}
+
+const unsavePlaylistApi = (id) => {
+    const URL_BACKEND = `/api/v1/playlists/${id}/save`;
+    return axios.delete(URL_BACKEND);
+}
+
+const checkIfPlaylistSavedApi = (id) => {
+    const URL_BACKEND = `/api/v1/playlists/${id}/is-saved`;
+    return axios.get(URL_BACKEND);
+}
+
+const getSavedPlaylistsApi = () => {
+    const URL_BACKEND = `/api/v1/playlists/saved`;
+    return axios.get(URL_BACKEND);
+}
+
+const saveAlbumApi = (id) => {
+    const URL_BACKEND = `/api/v1/albums/${id}/save`;
+    return axios.post(URL_BACKEND);
+}
+
+const unsaveAlbumApi = (id) => {
+    const URL_BACKEND = `/api/v1/albums/${id}/save`;
+    return axios.delete(URL_BACKEND);
+}
+
+const checkIfAlbumSavedApi = (id) => {
+    const URL_BACKEND = `/api/v1/albums/${id}/is-saved`;
+    return axios.get(URL_BACKEND);
+}
+
+const getSavedAlbumsApi = () => {
+    const URL_BACKEND = `/api/v1/albums/saved`;
+    return axios.get(URL_BACKEND);
+}
+
+const getAlbumByIdAsync = (id) => {
+    const URL_BACKEND = `/api/v1/albums/${id}`;
+    return axios.get(URL_BACKEND);
 }
 
 export {
@@ -117,7 +181,19 @@ export {
     playSongApi,
     getPlaylistsApi,
     getPlaylistByIdApi,
+    getLikedPlaylistApi,
     getAlbumsApi,
     addSongToPlaylistApi,
     removeSongFromPlaylistApi,
+    savePlaylistApi,
+    unsavePlaylistApi,
+    checkIfPlaylistSavedApi,
+    getSavedPlaylistsApi,
+    getSavedAlbumsApi,
+    saveAlbumApi,
+    unsaveAlbumApi,
+    checkIfAlbumSavedApi,
+    getMyPlaylistsApi,
+    getAlbumByIdAsync,
+    getArtistByIdApi,
 };

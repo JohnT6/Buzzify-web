@@ -5,7 +5,7 @@ import {
     Home as HomeIcon, LayoutGrid, Heart, Library, 
     Search, ChevronLeft, ChevronRight, LogOut 
 } from 'lucide-react';
-import { logoutApi, getCurrentUserApi, getPlaylistsApi } from '../services/api_services';
+import { logoutApi, getCurrentUserApi, getPlaylistsApi, getSavedPlaylistsApi } from '../services/api_services';
 import MusicPlayerBar from '../components/MusicPlayer/MusicPlayerBar';
 import { useMusic } from '../context/MusicContext';
 
@@ -21,6 +21,7 @@ const Logo = () => {
 };
 
 const UserMenu = ({ user, onLogout }) => {
+    const navigate = useNavigate();
     const [isOpen, setIsOpen] = useState(false);
     const menuRef = useRef(null);
 
@@ -46,7 +47,14 @@ const UserMenu = ({ user, onLogout }) => {
                         <p className="text-xs text-gray-500 truncate mt-0.5">{user?.email || ''}</p>
                     </div>
                     {['Hồ sơ', 'Cài đặt', 'Trợ giúp'].map(label => (
-                        <button key={label} className="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-colors">
+                        <button 
+                            key={label} 
+                            onClick={() => {
+                                setIsOpen(false);
+                                if (label === 'Hồ sơ') navigate('/home/profile');
+                            }}
+                            className="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-colors"
+                        >
                             {label}
                         </button>
                     ))}
@@ -65,8 +73,7 @@ const UserMenu = ({ user, onLogout }) => {
 const MusicLayout = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { currentSong } = useMusic();
-    const [user, setUser] = useState(null);
+    const { currentSong, user } = useMusic();
     const [playlists, setPlaylists] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
@@ -74,14 +81,24 @@ const MusicLayout = () => {
     useEffect(() => {
         (async () => {
             try {
-                const [uRes, pRes] = await Promise.allSettled([
-                    getCurrentUserApi(), getPlaylistsApi()
+                const [pRes, sRes] = await Promise.allSettled([
+                    getPlaylistsApi(), getSavedPlaylistsApi()
                 ]);
-                if (uRes.status === 'fulfilled') setUser(uRes.value);
+                
+                let combined = [];
                 if (pRes.status === 'fulfilled') {
-                    const p = pRes.value;
-                    setPlaylists(Array.isArray(p) ? p : (p?.data || []));
+                    const data = pRes.value;
+                    combined = [...(Array.isArray(data) ? data : (data?.data || []))];
                 }
+                if (sRes.status === 'fulfilled') {
+                    const sData = sRes.value;
+                    combined = [...combined, ...(Array.isArray(sData) ? sData : (sData?.data || []))];
+                }
+                
+                // Filter and unique
+                const unique = Array.from(new Map(combined.map(p => [p.id, p])).values());
+                setPlaylists(unique);
+
             } catch (e) { console.error(e); }
             finally { setLoading(false); }
         })();
@@ -95,9 +112,9 @@ const MusicLayout = () => {
 
     const navItems = [
         { id: 'home', label: 'Trang chủ', icon: <HomeIcon size={18} />, path: '/home' },
-        { id: 'browse', label: 'Khám phá', icon: <LayoutGrid size={18} />, path: '/browse' },
+        { id: 'browse', label: 'Khám phá', icon: <LayoutGrid size={18} />, path: '/home/browse' },
         { id: 'favorite', label: 'Yêu thích', icon: <Heart size={18} />, path: '/favorite' },
-        { id: 'library', label: 'Thư viện', icon: <Library size={18} />, path: '/library' },
+        { id: 'library', label: 'Thư viện', icon: <Library size={18} />, path: '/home/library' },
     ];
 
     return (
@@ -153,7 +170,9 @@ const MusicLayout = () => {
                         <input type="text" placeholder="Tìm kiếm..." value={search} onChange={e => setSearch(e.target.value)}
                             className="bg-transparent text-sm outline-none flex-1" />
                     </div>
-                    <UserMenu user={user} onLogout={handleLogout} />
+                    <div className="flex items-center gap-4">
+                        <UserMenu user={user} onLogout={handleLogout} />
+                    </div>
                 </header>
 
                 <main className="flex-1 overflow-hidden relative flex flex-col">
