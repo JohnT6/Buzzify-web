@@ -5,8 +5,10 @@ import Cookies from 'js-cookie';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useGoogleLogin, GoogleLogin } from '@react-oauth/google';
 import { loginApi, googleLoginApi, facebookLoginApi } from '../../services/api_services';
+import { useMusic } from '../../context/MusicContext';
 
 const Login = () => {
+  const { refreshUser } = useMusic();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -43,6 +45,7 @@ const Login = () => {
       const res = await googleLoginApi(credentialResponse.credential);
       if (res && res.token) {
         Cookies.set('access_token', res.token, { expires: 7 });
+        await refreshUser();
         navigate('/home');
       }
     } catch (err) {
@@ -63,6 +66,7 @@ const Login = () => {
         const res = await facebookLoginApi(authResponse.accessToken);
         if (res && res.token) {
           Cookies.set('access_token', res.token, { expires: 7 });
+          await refreshUser();
           navigate('/home');
         }
       } catch (err) {
@@ -104,6 +108,7 @@ const Login = () => {
         const res = await googleLoginApi(tokenResponse.access_token);
         if (res && res.token) {
           Cookies.set('access_token', res.token, { expires: 7 });
+          await refreshUser();
           navigate('/home');
         }
       } catch (err) {
@@ -129,6 +134,7 @@ const Login = () => {
       // Backend trả về 'token' trong AuthResponseDto
       if (res && res.token) {
         Cookies.set('access_token', res.token, { expires: 7 });
+        await refreshUser();
         navigate('/home');
       } else {
         setError('Đăng nhập không thành công. Hãy kiểm tra lại thông tin.');

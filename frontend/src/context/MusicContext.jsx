@@ -86,56 +86,76 @@ export const MusicProvider = ({ children }) => {
         audioRef.current.volume = volume;
     }, [volume]);
 
+    const refreshUser = async () => {
+        const token = Cookies.get('access_token');
+        if (!token) {
+            setUser(null);
+            setLikedSongIds(new Set());
+            setLikedPlaylistId(null);
+            return;
+        }
+
+        try {
+            const [uRes, lRes] = await Promise.all([
+                getCurrentUserApi(),
+                getLikedPlaylistApi()
+            ]);
+
+            if (uRes) setUser(uRes);
+
+            if (lRes && lRes.id) {
+                setLikedPlaylistId(lRes.id);
+                const ids = new Set((lRes.songs || []).map(s => s.id));
+                setLikedSongIds(ids);
+            }
+
+            // Restore playback state if available and not currently playing
+            if (!currentSong && uRes.playbackState?.lastSongId) {
+                try {
+                    const song = await getSongByIdApi(uRes.playbackState.lastSongId);
+                    if (song) {
+                        setCurrentSong(song);
+                        setQueue([song]);
+                        if (uRes.playbackState.lastSourceInfo) {
+                            try {
+                                setSourceInfo(JSON.parse(uRes.playbackState.lastSourceInfo));
+                            } catch (e) {}
+                        }
+                        
+                        const API_URL = import.meta.env.VITE_API_URL || '';
+                        const songUrl = song.url?.startsWith('http') ? song.url : `${API_URL}${song.url}`;
+                        audioRef.current.src = songUrl;
+                        audioRef.current.load();
+                        audioRef.current.currentTime = uRes.playbackState.lastPosition || 0;
+                        setIsPlaying(false);
+                    }
+                } catch (err) {
+                    console.error("Lỗi khi khôi phục trạng thái phát nhạc:", err);
+                }
+            }
+        } catch (error) {
+            console.error("Lỗi khi cập nhật thông tin người dùng:", error);
+            // If token is invalid/expired
+            if (error.response?.status === 401) {
+                logout();
+            }
+        }
+    };
+
+    const logout = () => {
+        Cookies.remove('access_token');
+        setUser(null);
+        setLikedSongIds(new Set());
+        setLikedPlaylistId(null);
+        setCurrentSong(null);
+        setIsPlaying(false);
+        audioRef.current.pause();
+        audioRef.current.src = '';
+    };
+
     // Initialize: load liked songs and user
     useEffect(() => {
-        const init = async () => {
-            const token = Cookies.get('access_token');
-            if (!token) return;
-
-            try {
-                const [uRes, lRes] = await Promise.all([
-                    getCurrentUserApi(),
-                    getLikedPlaylistApi()
-                ]);
-
-                if (uRes) setUser(uRes);
-
-                if (lRes && lRes.id) {
-                    setLikedPlaylistId(lRes.id);
-                    const ids = new Set((lRes.songs || []).map(s => s.id));
-                    setLikedSongIds(ids);
-                }
-
-                // Restore playback state if available
-                if (uRes.playbackState?.lastSongId) {
-                    try {
-                        const song = await getSongByIdApi(uRes.playbackState.lastSongId);
-                        if (song) {
-                            setCurrentSong(song);
-                            setQueue([song]); // Default to only current song if queue logic is simplified
-                            if (uRes.playbackState.lastSourceInfo) {
-                                try {
-                                    setSourceInfo(JSON.parse(uRes.playbackState.lastSourceInfo));
-                                } catch (e) {}
-                            }
-                            
-                            const API_URL = import.meta.env.VITE_API_URL || '';
-                            const songUrl = song.url?.startsWith('http') ? song.url : `${API_URL}${song.url}`;
-                            audioRef.current.src = songUrl;
-                            audioRef.current.load();
-                            audioRef.current.currentTime = uRes.playbackState.lastPosition || 0;
-                            setIsPlaying(false);
-                        }
-                    } catch (err) {
-                        console.error("Lỗi khi khôi phục trạng thái phát nhạc:", err);
-                    }
-                }
-            } catch (error) {
-                console.error("Lỗi khi khởi tạo nhạc:", error);
-            }
-        };
-
-        init();
+        refreshUser();
     }, []);
 
     // Playback logic
@@ -344,7 +364,7 @@ export const MusicProvider = ({ children }) => {
             likedSongIds, volume, audioRef, isShuffle, repeatMode,
             playSong, togglePlay, nextSong, prevSong, toggleLike, 
             setVolume, playFromQueue, setIsShuffle, setRepeatMode,
-            currentLyrics, user, setUser
+            currentLyrics, user, setUser, refreshUser, logout
         }}>
             {children}
         </MusicContext.Provider>

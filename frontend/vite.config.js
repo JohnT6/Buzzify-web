@@ -11,6 +11,11 @@ export default defineConfig({
     basicSsl(),
   ],
   server: {
+    hmr: {
+      host: 'buzzify-frontend.genzo.io.vn',
+      clientPort: 443,
+      protocol: 'wss'
+    },
     proxy: {
       '/api': {
         target: 'http://localhost:5090',

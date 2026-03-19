@@ -46,6 +46,12 @@ Tài liệu này lưu trữ các quy tắc, cấu trúc hệ thống và lịch 
     - Sửa lỗi NotSupportedError bằng cách bổ sung thuộc tính Url vào Search DTO.
     - Đồng bộ kết nối qua Vite Proxy để xử lý lỗi HTTPS/HTTP Mixed Content.
     - Đơn giản hóa thông tin nguồn phát (sourceInfo) cho tìm kiếm.
+    - Cập nhật **Bộ nhận diện thương hiệu**: Title chuyên nghiệp và bộ Favicon/Manifest đầy đủ.
+    - Sửa lỗi **WebSocket (HMR)**: Cấu hình `host` và `wss` trong `vite.config.js` để hỗ trợ live-reload qua Cloudflare Tunnel.
+    - Triển khai **Tự động cập nhật User**: Bổ sung hàm `refreshUser` vào `MusicContext` giúp cập nhật thông tin cá nhân ngay sau khi đăng nhập (Google/Facebook/Email) mà không cần F5.
+    - Cập nhật project_context.md và làm sạch .gitignore.
+- **Triển khai (Deployment)**:
+    - Hỗ trợ cấu hình Cloudflare Tunnel (xem chi tiết tại [deployment_guide.md](file:///d:/project_WebNangCao/history/deployment_guide.md)).
 
 ---
 *Cập nhật lần cuối: 20/03/2026 - Hoàn tất tính năng Tìm kiếm & Playback Stability.*

@@ -4,8 +4,10 @@ import AuthLayout from '../../layouts/AuthLayout';
 import Cookies from 'js-cookie';
 import { Loader2 } from 'lucide-react';
 import { verifyEmailApi } from '../../services/api_services';
+import { useMusic } from '../../context/MusicContext';
 
 const VerifyEmail = () => {
+  const { refreshUser } = useMusic();
   const [code, setCode] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -40,6 +42,7 @@ const VerifyEmail = () => {
       const res = await verifyEmailApi(email, fullCode);
       if (res && res.token) {
         Cookies.set('access_token', res.token, { expires: 7 });
+        await refreshUser();
         navigate('/home');
       } else {
         // Nếu API verify không trả token ngay thì về login

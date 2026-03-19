@@ -78,7 +78,7 @@ const UserMenu = ({ user, onLogout }) => {
 const MusicLayout = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { currentSong, user, playSong } = useMusic();
+    const { currentSong, user, playSong, logout } = useMusic();
     const [playlists, setPlaylists] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
@@ -120,7 +120,7 @@ const MusicLayout = () => {
 
     const handleLogout = async () => {
         try { await logoutApi(); } catch {}
-        Cookies.remove('access_token');
+        logout();
         navigate('/');
     };
 
