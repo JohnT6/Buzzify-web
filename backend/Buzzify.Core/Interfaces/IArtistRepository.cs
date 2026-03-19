@@ -4,5 +4,6 @@ namespace Buzzify.Core.Interfaces
 {
     public interface IArtistRepository : IRepository<Artist>
     {
+        Task<Artist?> GetArtistWithFollowersAsync(string id);
     }
 }

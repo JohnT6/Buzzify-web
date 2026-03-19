@@ -381,7 +381,13 @@ const MusicPlayerBar = () => {
 
                                     {/* Playing From Section */}
                                     <section>
-                                        <h3 className="text-[10px] font-black text-white mb-4 uppercase tracking-[0.2em]">Playing from: <span className="underline decoration-1 underline-offset-4">{sourceInfo?.name || 'Now Playing'}</span></h3>
+                                        <h3 className="text-[10px] font-black text-white mb-4 uppercase tracking-[0.2em]">
+                                            Playing from: {sourceInfo?.type === 'Searching' ? (
+                                                <span>{sourceInfo?.name || 'Now Playing'}</span>
+                                            ) : (
+                                                <span className="underline decoration-1 underline-offset-4">{sourceInfo?.name || 'Now Playing'}</span>
+                                            )}
+                                        </h3>
                                         <div className="flex items-center gap-4 p-3 rounded-lg bg-white/5 border border-white/10 group ring-1 ring-white/10 shadow-xl">
                                             <div className="w-12 h-12 rounded relative overflow-hidden flex-shrink-0 bg-gray-900">
                                                 <img src={imgUrl(currentSong.anhBia)} className="w-full h-full object-cover" />
@@ -497,12 +503,16 @@ const MusicPlayerBar = () => {
                                 {currentSong.tenNgheSi}{currentSong.ngheSiHopTac ? `, ${currentSong.ngheSiHopTac}` : ''}
                             </p>
                             <p className="text-[10px] text-white font-black uppercase tracking-widest leading-none">
-                                Playing from: <span 
-                                    onClick={() => sourceInfo?.id && navigate(`/home/playlist/${sourceInfo.id}`)}
-                                    className="underline decoration-1 underline-offset-2 hover:text-blue-400 cursor-pointer transition-colors"
-                                >
-                                    {sourceInfo?.name || 'Now Playing'}
-                                </span>
+                                Playing from: {sourceInfo?.type === 'Searching' ? (
+                                    <span>{sourceInfo?.name || 'Now Playing'}</span>
+                                ) : (
+                                    <span 
+                                        onClick={() => sourceInfo?.id && navigate(`/home/playlist/${sourceInfo.id}`)}
+                                        className="underline decoration-1 underline-offset-2 hover:text-blue-400 cursor-pointer transition-colors"
+                                    >
+                                        {sourceInfo?.name || 'Now Playing'}
+                                    </span>
+                                )}
                             </p>
                         </div>
                     </div>

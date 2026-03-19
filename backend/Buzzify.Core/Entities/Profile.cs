@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace Buzzify.Core.Entities;
@@ -42,4 +42,10 @@ public partial class Profile
     public virtual ICollection<Album> IdAlbums { get; set; } = new List<Album>();
 
     public virtual ICollection<Playlist> PlaylistsNavigation { get; set; } = new List<Playlist>();
+
+    // Playback state persistence
+    public string? LastSongId { get; set; }
+    public string? LastQueueIds { get; set; }
+    public string? LastSourceInfo { get; set; }
+    public double? LastPosition { get; set; }
 }

@@ -1,5 +1,6 @@
 using Buzzify.Application.DTOs;
 using Buzzify.Application.DTOs.Album;
+using Buzzify.Application.DTOs.Song;
 using Buzzify.Application.Interfaces;
 using Buzzify.Core.Entities;
 using Buzzify.Core.Exceptions;
@@ -46,7 +47,7 @@ namespace Buzzify.Application.Services
 
         public async Task<AlbumDto?> GetAlbumByIdAsync(string id)
         {
-            var a = await _albumRepository.GetByIdAsync(id);
+            var a = await _albumRepository.GetAlbumWithSongsByIdAsync(id);
             if (a == null) return null;
 
             return new AlbumDto
@@ -57,7 +58,22 @@ namespace Buzzify.Application.Services
                 ArtistId = a.ArtistId,
                 ArtistName = a.Artist?.Ten,
                 GenreNames = a.IdTheLoais.Select(g => g.Ten).Take(1).ToList(),
-                NgayPhatHanh = a.NgayPhatHanh
+                NgayPhatHanh = a.NgayPhatHanh,
+                Songs = a.Songs.OrderBy(s => s.TrackNumber ?? 99).Select(s => new SongDto
+                {
+                    Id = s.Id,
+                    TieuDe = s.TieuDe,
+                    ThoiLuongGiay = s.ThoiLuongGiay,
+                    Url = s.Url,
+                    AnhBia = s.AnhBia,
+                    LuotNghe = s.LuotNghe,
+                    ArtistId = s.ArtistId,
+                    TenNgheSi = s.Artist?.Ten,
+                    NgheSiHopTac = s.NgheSiHopTac,
+                    TrackNumber = s.TrackNumber,
+                    IdAlbum = s.IdAlbum,
+                    TenAlbum = a.TieuDe
+                }).ToList()
             };
         }
 
@@ -134,7 +150,15 @@ namespace Buzzify.Application.Services
                 ArtistId = a.ArtistId,
                 ArtistName = a.Artist?.Ten,
                 GenreNames = a.IdTheLoais.Select(g => g.Ten).Take(1).ToList(),
-                NgayPhatHanh = a.NgayPhatHanh
+                NgayPhatHanh = a.NgayPhatHanh,
+                Songs = a.Songs.Select(s => new SongDto
+                {
+                    Id = s.Id,
+                    TieuDe = s.TieuDe,
+                    ThoiLuongGiay = s.ThoiLuongGiay,
+                    ArtistId = s.ArtistId,
+                    IdAlbum = s.IdAlbum
+                }).ToList()
             });
         }
     }

@@ -61,6 +61,26 @@ const getArtistByIdApi = (id) => {
     return axios.get(URL_BACKEND);
 }
 
+const getFollowedArtistsApi = (userId) => {
+    const URL_BACKEND = `/api/v1/artists/followed?userId=${userId}`;
+    return axios.get(URL_BACKEND);
+}
+
+const followArtistApi = (artistId, userId) => {
+    const URL_BACKEND = `/api/v1/artists/${artistId}/follow?userId=${userId}`;
+    return axios.post(URL_BACKEND);
+}
+
+const unfollowArtistApi = (artistId, userId) => {
+    const URL_BACKEND = `/api/v1/artists/${artistId}/unfollow?userId=${userId}`;
+    return axios.post(URL_BACKEND);
+}
+
+const checkFollowArtistApi = (artistId, userId) => {
+    const URL_BACKEND = `/api/v1/artists/${artistId}/is-followed?userId=${userId}`;
+    return axios.get(URL_BACKEND);
+}
+
 // ─── Songs ────────────────────────────────────────────────────────────────────
 
 const getSongsApi = (search = null, page = 1, pageSize = 20, artistId = null) => {
@@ -166,6 +186,21 @@ const getAlbumByIdAsync = (id) => {
     return axios.get(URL_BACKEND);
 }
 
+const updatePlaybackStateApi = (state) => {
+    const URL_BACKEND = "/api/v1/users/me/playback-state";
+    return axios.patch(URL_BACKEND, state);
+}
+
+const globalSearchApi = (query) => {
+    const URL_BACKEND = `/api/v1/search?query=${encodeURIComponent(query)}`;
+    return axios.get(URL_BACKEND);
+}
+
+const searchByTypeApi = (query, type, page = 1, pageSize = 20) => {
+    const URL_BACKEND = `/api/v1/search/all?query=${encodeURIComponent(query)}&type=${type}&page=${page}&pageSize=${pageSize}`;
+    return axios.get(URL_BACKEND);
+}
+
 export {
     loginApi,
     registerApi,
@@ -196,4 +231,11 @@ export {
     getMyPlaylistsApi,
     getAlbumByIdAsync,
     getArtistByIdApi,
+    getFollowedArtistsApi,
+    followArtistApi,
+    unfollowArtistApi,
+    checkFollowArtistApi,
+    updatePlaybackStateApi,
+    globalSearchApi,
+    searchByTypeApi,
 };

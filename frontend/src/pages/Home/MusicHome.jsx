@@ -5,7 +5,10 @@ import {
     LogOut, Search, Home as HomeIcon, LayoutGrid, Heart, Library,
     ChevronLeft, ChevronRight, Play, MoreHorizontal, Music2, Lock, ArrowUp
 } from 'lucide-react';
-import { logoutApi, getCurrentUserApi, getSongsApi, getPlaylistsApi, getAlbumsApi } from '../../services/api_services';
+import { 
+    logoutApi, getCurrentUserApi, getSongsApi, getPlaylistsApi, getAlbumsApi,
+    savePlaylistApi, unsavePlaylistApi, checkIfPlaylistSavedApi
+} from '../../services/api_services';
 import { useMusic } from '../../context/MusicContext';
 import SongMenu from '../../components/MusicPlayer/SongMenu';
 import ImgFallback, { imgUrl } from '../../components/Common/ImgFallback';
@@ -84,7 +87,29 @@ const SongCard = ({ song, onPlay }) => {
 
 /* ─── Mix Card (Custom Mixes) ───────────────────────────────────────────────── */
 const MixCard = ({ playlist, onClick }) => {
-    const [isLoved, setIsLoved] = useState(false);
+    const [isSaved, setIsSaved] = useState(false);
+
+    useEffect(() => {
+        if (!playlist?.id) return;
+        checkIfPlaylistSavedApi(playlist.id)
+            .then(res => {
+                const saved = typeof res === 'boolean' ? res : (res?.isSaved ?? res?.data?.isSaved ?? false);
+                setIsSaved(saved);
+            })
+            .catch(() => setIsSaved(false));
+    }, [playlist.id]);
+
+    const handleToggleSave = async (e) => {
+        e.stopPropagation();
+        try {
+            if (isSaved) await unsavePlaylistApi(playlist.id);
+            else await savePlaylistApi(playlist.id);
+            setIsSaved(!isSaved);
+        } catch (error) {
+            console.error("Lỗi khi cập nhật playlist:", error);
+        }
+    };
+
     return (
         <div className="flex-shrink-0 w-48 group cursor-pointer transition-all" onClick={() => onClick(playlist)}>
             <div className="relative w-48 h-48 rounded-md overflow-hidden mb-3 bg-gray-800">
@@ -94,9 +119,17 @@ const MixCard = ({ playlist, onClick }) => {
                         <Play size={18} fill="black" className="text-black ml-0.5" />
                     </div>
                     <button
-                        onClick={(e) => { e.stopPropagation(); setIsLoved(!isLoved); }}
-                        className="absolute bottom-4 right-3 hover:scale-110 transition-transform cursor-pointer">
-                        <Heart size={22} fill={isLoved ? ACCENT : "none"} color={isLoved ? ACCENT : "white"} />
+                        onClick={handleToggleSave}
+                        className="absolute bottom-4 right-3 hover:scale-110 transition-transform cursor-pointer drop-shadow-lg"
+                        title={isSaved ? "Xóa khỏi thư viện" : "Lưu vào thư viện"}
+                    >
+                        <Heart 
+                            size={22} 
+                            fill={isSaved ? ACCENT : "none"} 
+                            color={isSaved ? ACCENT : "white"} 
+                            strokeWidth={isSaved ? 0 : 2.5}
+                            className="transition-colors"
+                        />
                     </button>
                 </div>
             </div>

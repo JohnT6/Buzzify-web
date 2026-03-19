@@ -7,5 +7,6 @@ namespace Buzzify.Core.Interfaces
     {
         Task<Profile?> GetByEmailAsync(string email);
         Task<Profile?> GetByProviderAsync(string provider, string providerId);
+        Task<Profile?> GetProfileWithArtistsAsync(string id);
     }
 }

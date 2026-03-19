@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace Buzzify.Core.Entities;
@@ -12,6 +12,7 @@ public partial class Artist
     public string? AnhDaiDien { get; set; }
 
     public string? ProfileId { get; set; }
+    public int FollowerCount { get; set; }
 
     public virtual ICollection<Album> Albums { get; set; } = new List<Album>();
 

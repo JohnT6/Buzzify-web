@@ -70,7 +70,7 @@ const SongRow = ({
                         onClick={(e) => { e.stopPropagation(); onToggleLike(song); }}
                         className="hover:scale-110 transition-transform active:scale-95"
                     >
-                        <Heart size={16} fill={likedSongIds.has(song.id) ? ACCENT : "none"} color={likedSongIds.has(song.id) ? ACCENT : "white"} strokeWidth={likedSongIds.has(song.id) ? 0 : 2} />
+                        <Heart size={16} fill={likedSongIds.has(song.id) ? ACCENT : "none"} color="currentColor" className={likedSongIds.has(song.id) ? '' : 'text-white/40 hover:text-white transition-colors'} strokeWidth={likedSongIds.has(song.id) ? 0 : 2} />
                     </button>
                     <button 
                         onClick={(e) => onOpenMenu(e, song)}

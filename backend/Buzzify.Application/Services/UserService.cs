@@ -29,7 +29,14 @@ namespace Buzzify.Application.Services
                 AnhDaiDien = u.AnhDaiDien,
                 VaiTro = u.VaiTro ?? "user",
                 IsEmailVerified = u.IsEmailVerified,
-                Provider = u.Provider
+                Provider = u.Provider,
+                PlaybackState = new PlaybackStateDto
+                {
+                    LastSongId = u.LastSongId,
+                    LastQueueIds = u.LastQueueIds,
+                    LastSourceInfo = u.LastSourceInfo,
+                    LastPosition = u.LastPosition
+                }
             });
         }
 
@@ -46,7 +53,14 @@ namespace Buzzify.Application.Services
                 AnhDaiDien = u.AnhDaiDien,
                 VaiTro = u.VaiTro ?? "user",
                 IsEmailVerified = u.IsEmailVerified,
-                Provider = u.Provider
+                Provider = u.Provider,
+                PlaybackState = new PlaybackStateDto
+                {
+                    LastSongId = u.LastSongId,
+                    LastQueueIds = u.LastQueueIds,
+                    LastSourceInfo = u.LastSourceInfo,
+                    LastPosition = u.LastPosition
+                }
             };
         }
 
@@ -62,6 +76,20 @@ namespace Buzzify.Application.Services
             }
 
             user.VaiTro = newRole.ToLower();
+            _profileRepository.Update(user);
+            await _profileRepository.SaveChangesAsync();
+        }
+
+        public async Task UpdatePlaybackStateAsync(string userId, PlaybackStateDto state)
+        {
+            var user = await _profileRepository.GetByIdAsync(userId);
+            if (user == null) return;
+
+            user.LastSongId = state.LastSongId;
+            user.LastQueueIds = state.LastQueueIds;
+            user.LastSourceInfo = state.LastSourceInfo;
+            user.LastPosition = state.LastPosition;
+
             _profileRepository.Update(user);
             await _profileRepository.SaveChangesAsync();
         }

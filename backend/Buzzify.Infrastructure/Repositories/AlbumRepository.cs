@@ -42,6 +42,16 @@ namespace Buzzify.Infrastructure.Repositories
             return (items, totalCount);
         }
 
+        public async Task<Album?> GetAlbumWithSongsByIdAsync(string id)
+        {
+            return await _dbSet.AsNoTracking()
+                .Include(a => a.Artist)
+                .Include(a => a.IdTheLoais)
+                .Include(a => a.Songs)
+                    .ThenInclude(s => s.Artist)
+                .FirstOrDefaultAsync(a => a.Id == id);
+        }
+
         public async Task SaveAlbumAsync(string userId, string albumId)
         {
             var exists = await IsAlbumSavedByUserAsync(userId, albumId);
@@ -74,6 +84,7 @@ namespace Buzzify.Infrastructure.Repositories
             return await _context.Albums
                 .Where(a => a.IdNguoiDungs.Any(u => u.Id == userId))
                 .Include(a => a.Artist)
+                .Include(a => a.Songs)
                 .ToListAsync();
         }
     }

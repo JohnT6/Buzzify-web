@@ -31,6 +31,7 @@ import AlbumView from './pages/Home/AlbumView';
 import ArtistView from './pages/Home/ArtistView';
 import ProfileView from './pages/Home/ProfileView';
 import ExploreView from './pages/Home/ExploreView';
+import SearchView from './pages/Home/SearchView';
 
 function App() {
   useEffect(() => {
@@ -71,6 +72,7 @@ function App() {
               <Route path="artist/:id" element={<ArtistView />} />
               <Route path="profile" element={<ProfileView />} />
               <Route path="browse" element={<ExploreView />} />
+              <Route path="search" element={<SearchView />} />
             </Route>
             
             <Route path="*" element={<Navigate to="/" />} />

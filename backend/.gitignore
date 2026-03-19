@@ -45,3 +45,10 @@ wwwroot/lib/
 # User settings
 appsettings.Development.json
 appsettings.Local.json
+
+# Build logs and temp files
+build_errors.txt
+build_errors2.txt
+build_log*.txt
+build_log_full.txt
+*.log

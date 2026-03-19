@@ -1,3 +1,4 @@
+using Buzzify.Application.DTOs.Song;
 using System;
 using System.Collections.Generic;
 
@@ -12,5 +13,6 @@ namespace Buzzify.Application.DTOs.Album
         public string? ArtistName { get; set; }
         public List<string> GenreNames { get; set; } = new();
         public DateOnly? NgayPhatHanh { get; set; }
+        public List<SongDto> Songs { get; set; } = new();
     }
 }

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useOutletContext } from 'react-router-dom';
 import { 
     Play, Pause, Heart, MoreHorizontal, Clock, 
-    Music2, Plus, Download, Share2, Trash2, Shuffle
+    Music2, Plus, Download, Share2, Trash2, Shuffle, Check
 } from 'lucide-react';
 import { 
     getPlaylistByIdApi, removeSongFromPlaylistApi, 
@@ -151,7 +151,7 @@ const PlaylistView = () => {
                             )}
                             <p className="text-[11px] font-black uppercase tracking-[0.3em] text-white/40">Playlist</p>
                         </div>
-                        <h1 className="text-8xl font-black text-white tracking-tighter uppercase leading-none">{playlist.ten}</h1>
+                        <h1 className="text-5xl font-black text-white tracking-tighter uppercase leading-none">{playlist.ten}</h1>
                         <div className="flex flex-col gap-4">
                             <p className="text-white/40 max-w-2xl font-medium leading-relaxed">{playlist.moTa || 'Danh sách phát dành cho bạn.'}</p>
                             <div className="flex items-center gap-2.5 text-[11px] font-black uppercase tracking-widest">
@@ -188,26 +188,24 @@ const PlaylistView = () => {
                         </button>
                     </div>
 
-                    <div className="flex items-center gap-10">
+                    <div className="flex items-center gap-6">
                         <button 
                             onClick={handleToggleSave}
-                            className="flex flex-col items-center gap-1 group"
+                            className="flex items-center justify-center w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all border border-white/5 focus:outline-none"
+                            title={isSaved ? "Bỏ lưu" : "Lưu vào thư viện"}
                         >
-                            <Heart size={24} fill={isSaved ? ACCENT : "none"} color={isSaved ? ACCENT : "white"} className="transition-transform group-hover:scale-110" />
-                            <span className="text-[10px] uppercase font-black tracking-widest text-white/40 group-hover:text-white transition-colors">Lưu</span>
+                            <Heart size={20} fill={isSaved ? '#0F5E8F' : 'none'} color={isSaved ? '#0F5E8F' : 'currentColor'} className="transition-transform hover:scale-110" />
                         </button>
 
-                        <button className="flex flex-col items-center gap-1 group">
-                            <Share2 size={24} className="text-white/40 group-hover:text-white transition-all group-hover:scale-110" />
-                            <span className="text-[10px] uppercase font-black tracking-widest text-white/40 group-hover:text-white transition-colors">Chia sẻ</span>
+                        <button className="flex items-center justify-center w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all border border-white/5 focus:outline-none">
+                            <Share2 size={20} />
                         </button>
 
                         <button 
                             onClick={handleOpenPlaylistMenu}
-                            className="flex flex-col items-center gap-1 group"
+                            className="flex items-center justify-center w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all border border-white/5 focus:outline-none"
                         >
-                            <MoreHorizontal size={24} className="text-white/40 group-hover:text-white transition-all group-hover:scale-110" />
-                            <span className="text-[10px] uppercase font-black tracking-widest text-white/40 group-hover:text-white transition-colors">Thêm</span>
+                            <MoreHorizontal size={20} />
                         </button>
                     </div>
                 </div>

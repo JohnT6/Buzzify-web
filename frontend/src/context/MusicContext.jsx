@@ -1,6 +1,9 @@
 import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
 import Cookies from 'js-cookie';
-import { getCurrentUserApi, getPlaylistsApi, getSongsApi, playSongApi, getLikedPlaylistApi, addSongToPlaylistApi, removeSongFromPlaylistApi } from '../services/api_services';
+import { 
+    getCurrentUserApi, getPlaylistsApi, getSongsApi, playSongApi, getLikedPlaylistApi, 
+    addSongToPlaylistApi, removeSongFromPlaylistApi, updatePlaybackStateApi, getSongByIdApi 
+} from '../services/api_services';
 
 const MusicContext = createContext();
 
@@ -97,11 +100,35 @@ export const MusicProvider = ({ children }) => {
 
                 if (uRes) setUser(uRes);
 
-                const likedPl = lRes;
-                if (likedPl && likedPl.id) {
-                    setLikedPlaylistId(likedPl.id);
-                    const ids = new Set((likedPl.songs || []).map(s => s.id));
+                if (lRes && lRes.id) {
+                    setLikedPlaylistId(lRes.id);
+                    const ids = new Set((lRes.songs || []).map(s => s.id));
                     setLikedSongIds(ids);
+                }
+
+                // Restore playback state if available
+                if (uRes.playbackState?.lastSongId) {
+                    try {
+                        const song = await getSongByIdApi(uRes.playbackState.lastSongId);
+                        if (song) {
+                            setCurrentSong(song);
+                            setQueue([song]); // Default to only current song if queue logic is simplified
+                            if (uRes.playbackState.lastSourceInfo) {
+                                try {
+                                    setSourceInfo(JSON.parse(uRes.playbackState.lastSourceInfo));
+                                } catch (e) {}
+                            }
+                            
+                            const API_URL = import.meta.env.VITE_API_URL || '';
+                            const songUrl = song.url?.startsWith('http') ? song.url : `${API_URL}${song.url}`;
+                            audioRef.current.src = songUrl;
+                            audioRef.current.load();
+                            audioRef.current.currentTime = uRes.playbackState.lastPosition || 0;
+                            setIsPlaying(false);
+                        }
+                    } catch (err) {
+                        console.error("Lỗi khi khôi phục trạng thái phát nhạc:", err);
+                    }
                 }
             } catch (error) {
                 console.error("Lỗi khi khởi tạo nhạc:", error);
@@ -165,7 +192,15 @@ export const MusicProvider = ({ children }) => {
 
         // Update audio source and play
         const API_URL = import.meta.env.VITE_API_URL || '';
-        const songUrl = song.url?.startsWith('http') ? song.url : `${API_URL}${song.url}`;
+        const songPath = song.url || song.Url || song.URL;
+        
+        if (!songPath) {
+            console.warn("Song path is missing for:", song.tieuDe || song.TieuDe);
+            return;
+        }
+
+        const songUrl = songPath.startsWith('http') ? songPath : `${API_URL}${songPath}`;
+        console.log("Playing song URL:", songUrl);
         audioRef.current.src = songUrl;
         audioRef.current.play().catch(e => console.error("Playback error:", e));
     };
@@ -280,6 +315,28 @@ export const MusicProvider = ({ children }) => {
         audio.addEventListener('ended', handleEnded);
         return () => audio.removeEventListener('ended', handleEnded);
     }, [currentIndex, queue, isShuffle, repeatMode]);
+
+    // Periodically save playback state to backend
+    useEffect(() => {
+        if (!user?.id || !currentSong?.id) return;
+
+        const savePlaybackState = async () => {
+            const state = {
+                LastSongId: currentSong.id,
+                LastQueueIds: queue.map(s => s.id).join(','),
+                LastSourceInfo: sourceInfo ? JSON.stringify(sourceInfo) : null,
+                LastPosition: audioRef.current.currentTime
+            };
+            try {
+                await updatePlaybackStateApi(state);
+            } catch (e) {
+                console.error("Lỗi khi lưu trạng thái phát nhạc:", e);
+            }
+        };
+
+        const interval = setInterval(savePlaybackState, 15000); // Save every 15 seconds
+        return () => clearInterval(interval);
+    }, [user?.id, currentSong?.id, queue.length, sourceInfo]);
 
     return (
         <MusicContext.Provider value={{

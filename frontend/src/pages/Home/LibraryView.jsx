@@ -7,7 +7,7 @@ import {
 import { 
     getLikedPlaylistApi, getSavedPlaylistsApi, 
     getPlaylistsApi, getAlbumsApi, getSavedAlbumsApi,
-    getMyPlaylistsApi
+    getMyPlaylistsApi, getFollowedArtistsApi
 } from '../../services/api_services';
 import { useMusic } from '../../context/MusicContext';
 
@@ -22,12 +22,13 @@ const imgUrl = (src) => {
 
 const LibraryCard = ({ item, type, onClick, onEdit }) => {
     const isLikedSongs = type === 'liked';
+    const isArtist = type === 'artist';
     const isOwner = type === 'playlist' && item.idNguoiTao === item.currentUserId; 
     const title = isLikedSongs ? 'Bài hát đã thích' : (item.ten || item.tieuDe);
-    const creator = isLikedSongs ? 'Bạn' : (item.creatorName || item.artistName || 'Artist'); 
+    const creator = isLikedSongs ? 'Bạn' : (isArtist ? `${(item.followerCount || 0).toLocaleString()} fans` : (item.creatorName || item.artistName || 'Artist')); 
     
-    const count = isLikedSongs ? (item.songs?.length || 0) : (item.songCount || 0);
-    const footerText = `${count} ${type === 'album' ? 'ALBUMS' : 'TRACKS'}`;
+    const count = isLikedSongs ? (item.songs?.length || 0) : (item.songCount || item.songs?.length || 0);
+    const footerText = isArtist ? 'ARTIST' : `${count} ${type === 'album' ? 'ALBUMS' : 'TRACKS'}`;
 
     const renderThumbnail = () => {
         if (isLikedSongs) {
@@ -38,9 +39,11 @@ const LibraryCard = ({ item, type, onClick, onEdit }) => {
             );
         }
 
-        if (item.anhBia) {
-            return <img src={imgUrl(item.anhBia)} className="w-full h-full object-cover" alt={title} />;
+        const thumbnailSrc = item.anhDaiDien || item.anhBia;
+        if (thumbnailSrc) {
+            return <img src={imgUrl(thumbnailSrc)} className={`w-full h-full object-cover ${isArtist ? 'rounded-full' : ''}`} alt={title} />;
         }
+// ... (rest of renderThumbnail remains similar)
 
         const images = item.topSongImages || [];
         if (images.length >= 4) {
@@ -75,44 +78,27 @@ const LibraryCard = ({ item, type, onClick, onEdit }) => {
     return (
         <div 
             onClick={onClick}
-            className="transition-all cursor-pointer group flex flex-col gap-3 relative"
+            className={`transition-all cursor-pointer group flex flex-col gap-3 relative ${isArtist ? 'items-center' : 'p-3 rounded-xl hover:bg-white/5'}`}
         >
-            <div className="relative aspect-square rounded-lg overflow-hidden shadow-xl bg-gray-900">
+            <div className={`relative aspect-square overflow-hidden ${isArtist ? 'rounded-full w-full' : 'rounded-lg shadow-xl bg-[#1a1a1a] w-full'}`}>
                 {renderThumbnail()}
-                {/* Hover overlay content (Image 3) */}
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-4">
-                    <div className="flex items-center justify-between">
-                        <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center hover:scale-105 transition-transform shadow-xl">
-                            <Play size={18} fill="black" className="text-black ml-1" />
-                        </div>
-                        <div className="flex gap-0.5">
-                            <div className="w-1 h-1 bg-white rounded-full" />
-                            <div className="w-1 h-1 bg-white rounded-full" />
-                            <div className="w-1 h-1 bg-white rounded-full" />
-                        </div>
+                {/* Hover overlay content */}
+                <div className={`absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center ${isArtist ? 'rounded-full' : ''}`}>
+                    <div className={`${isArtist ? 'w-14 h-14' : 'w-12 h-12 shadow-2xl translate-y-4 group-hover:translate-y-0 transition-all duration-300'} rounded-full bg-[#0F5E8F] flex items-center justify-center hover:scale-110 transition-transform`}>
+                        <Play size={isArtist ? 24 : 20} fill="white" className="text-white ml-1" />
                     </div>
                 </div>
             </div>
-            <div className="flex flex-col gap-0.5 min-w-0 px-1">
-                <div className="flex items-center justify-between gap-2">
-                    <h3 className="text-sm font-black text-white truncate uppercase tracking-tighter leading-tight flex-1">{title}</h3>
-                </div>
+            <div className={`flex flex-col gap-0.5 min-w-0 px-1 ${isArtist ? 'items-center text-center' : ''}`}>
+                <h3 className={`text-sm font-bold text-white truncate leading-tight ${isArtist ? 'text-center' : ''}`}>{title}</h3>
                 
-                <div className="flex items-center justify-between">
-                    <p className="text-[10px] font-bold text-white/60 truncate">{creator}</p>
-                    {onEdit && (
-                        <button 
-                            onClick={(e) => { e.stopPropagation(); onEdit(); }}
-                            className="text-[9px] font-black text-[#00ffcc] uppercase tracking-widest hover:underline"
-                        >
-                            Thay đổi
-                        </button>
-                    )}
-                </div>
+                {!isArtist && (
+                    <p className="text-[11px] text-white/50 truncate font-medium">{creator}</p>
+                )}
                 
-                <div className="mt-0.5">
-                    <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em]">{footerText}</p>
-                </div>
+                {isArtist && (
+                    <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest">Artist</p>
+                )}
             </div>
         </div>
     );
@@ -126,32 +112,31 @@ const LibraryView = () => {
     const [myPlaylists, setMyPlaylists] = useState([]);
     const [savedPlaylists, setSavedPlaylists] = useState([]);
     const [savedAlbums, setSavedAlbums] = useState([]);
+    const [followedArtists, setFollowedArtists] = useState([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('all');
 
     useEffect(() => {
         const fetchLibrary = async () => {
+            if (!user?.id) return;
             setLoading(true);
             try {
-                const [lRes, mRes, sRes, saRes] = await Promise.allSettled([
+                const [lRes, mRes, sRes, saRes, faRes] = await Promise.allSettled([
                     getLikedPlaylistApi(),
                     getMyPlaylistsApi(),
                     getSavedPlaylistsApi(),
-                    getSavedAlbumsApi()
+                    getSavedAlbumsApi(),
+                    getFollowedArtistsApi(user.id)
                 ]);
 
                 if (lRes.status === 'fulfilled') setLikedPlaylist(lRes.value);
                 if (mRes.status === 'fulfilled') {
-                    // Filter out duplicate liked songs playlist
                     const filtered = (mRes.value || []).filter(p => p.loaiPlaylist !== 'liked_songs');
                     setMyPlaylists(filtered);
                 }
-                if (sRes.status === 'fulfilled') {
-                    setSavedPlaylists(sRes.value || []);
-                }
-                if (saRes.status === 'fulfilled') {
-                    setSavedAlbums(saRes.value || []);
-                }
+                if (sRes.status === 'fulfilled') setSavedPlaylists(sRes.value || []);
+                if (saRes.status === 'fulfilled') setSavedAlbums(saRes.value || []);
+                if (faRes.status === 'fulfilled') setFollowedArtists(faRes.value || []);
 
             } catch (error) {
                 console.error("Lỗi khi tải thư viện:", error);
@@ -238,9 +223,19 @@ const LibraryView = () => {
                         onClick={() => navigate(`/home/album/${a.id}`)}
                     />
                 ))}
+
+                {/* Followed Artists */}
+                {(activeTab === 'all' || activeTab === 'artists') && followedArtists.map(art => (
+                    <LibraryCard 
+                        key={art.id} 
+                        type="artist" 
+                        item={art} 
+                        onClick={() => navigate(`/home/artist/${art.id}`)}
+                    />
+                ))}
             </div>
 
-            {(activeTab === 'all' && myPlaylists.length === 0 && savedPlaylists.length === 0 && savedAlbums.length === 0 && !likedPlaylist) && (
+            {(activeTab === 'all' && myPlaylists.length === 0 && savedPlaylists.length === 0 && savedAlbums.length === 0 && followedArtists.length === 0 && !likedPlaylist) && (
                 <div className="py-24 text-center">
                     <LayoutGrid size={64} className="mx-auto mb-6 text-white/5" />
                     <p className="text-white/20 font-black uppercase tracking-[0.2em]">Thư viện của bạn đang trống.</p>

@@ -6,5 +6,7 @@ namespace Buzzify.Application.DTOs.Artist
         public string Ten { get; set; } = string.Empty;
         public string? AnhDaiDien { get; set; }
         public string? ProfileId { get; set; }
+        public int FollowerCount { get; set; }
+        public bool IsFollowed { get; set; }
     }
 }

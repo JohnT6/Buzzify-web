@@ -3,10 +3,14 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import Cookies from 'js-cookie';
 import { 
     Home as HomeIcon, LayoutGrid, Heart, Library, 
-    Search, ChevronLeft, ChevronRight, LogOut 
+    Search, ChevronLeft, ChevronRight, LogOut, X 
 } from 'lucide-react';
-import { logoutApi, getCurrentUserApi, getPlaylistsApi, getSavedPlaylistsApi } from '../services/api_services';
+import { 
+    logoutApi, getCurrentUserApi, getPlaylistsApi, 
+    getSavedPlaylistsApi, globalSearchApi 
+} from '../services/api_services';
 import MusicPlayerBar from '../components/MusicPlayer/MusicPlayerBar';
+import SearchDropdown from '../components/Search/SearchDropdown';
 import { useMusic } from '../context/MusicContext';
 
 const ACCENT = '#0F5E8F';
@@ -31,8 +35,9 @@ const UserMenu = ({ user, onLogout }) => {
         return () => document.removeEventListener('mousedown', fn);
     }, []);
 
+    const displayName = user?.hoTen || user?.fullName || user?.FullName || 'Người dùng';
     const avatarSrc = user?.anhDaiDien 
-        || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.hoTen || 'U')}&background=e11d48&color=fff&bold=true`;
+        || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=0F5E8F&color=fff&bold=true`;
 
     return (
         <div className="relative" ref={menuRef}>
@@ -43,8 +48,8 @@ const UserMenu = ({ user, onLogout }) => {
             {isOpen && (
                 <div className="absolute right-0 mt-3 w-60 bg-[#1a1a1a] rounded-2xl shadow-2xl border border-white/10 py-2 z-[600]">
                     <div className="px-4 py-3 border-b border-white/10">
-                        <p className="text-sm font-bold text-white truncate">{user?.hoTen || 'Người dùng'}</p>
-                        <p className="text-xs text-gray-500 truncate mt-0.5">{user?.email || ''}</p>
+                        <p className="text-sm font-bold text-white truncate">{displayName}</p>
+                        <p className="text-xs text-gray-500 truncate mt-0.5">{user?.email || 'Email của bạn'}</p>
                     </div>
                     {['Hồ sơ', 'Cài đặt', 'Trợ giúp'].map(label => (
                         <button 
@@ -73,10 +78,19 @@ const UserMenu = ({ user, onLogout }) => {
 const MusicLayout = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { currentSong, user } = useMusic();
+    const { currentSong, user, playSong } = useMusic();
     const [playlists, setPlaylists] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
+    const [isSearchFocused, setIsSearchFocused] = useState(false);
+    const [isSearching, setIsSearching] = useState(false);
+    const [searchResults, setSearchResults] = useState(null);
+    const [recentSearches, setRecentSearches] = useState(() => {
+        const saved = localStorage.getItem('recent_searches');
+        return saved ? JSON.parse(saved) : [];
+    });
+    const searchRef = useRef(null);
+    const [showDropdown, setShowDropdown] = useState(false);
 
     useEffect(() => {
         (async () => {
@@ -110,10 +124,63 @@ const MusicLayout = () => {
         navigate('/');
     };
 
+    useEffect(() => {
+        if (!search.trim()) {
+            setSearchResults(null);
+            return;
+        }
+        setIsSearching(true);
+        const timer = setTimeout(async () => {
+            try {
+                const res = await globalSearchApi(search);
+                setSearchResults(res?.data || res || null);
+            } catch (err) { console.error(err); }
+            finally { setIsSearching(false); }
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [search]);
+
+    useEffect(() => {
+        const fn = (e) => { 
+            if (searchRef.current && !searchRef.current.contains(e.target)) {
+                setShowDropdown(false);
+                setIsSearchFocused(false);
+            }
+        };
+        document.addEventListener('mousedown', fn);
+        return () => document.removeEventListener('mousedown', fn);
+    }, []);
+
+    const handleSearchSelect = (item, type = 'query') => {
+        const q = typeof item === 'string' ? item : (item.ten || item.fullName || item.tieuDe);
+        
+        // Save to recent
+        const updated = [q, ...recentSearches.filter(i => i !== q)].slice(0, 5);
+        setRecentSearches(updated);
+        localStorage.setItem('recent_searches', JSON.stringify(updated));
+
+        setShowDropdown(false);
+        setIsSearchFocused(false);
+
+        if (type === 'track') {
+            // Handle play or navigate
+            navigate(`/home/search?q=${encodeURIComponent(q)}`);
+        } else if (type === 'album') {
+            navigate(`/home/album/${item.id}`);
+        } else {
+            navigate(`/home/search?q=${encodeURIComponent(q)}`);
+        }
+    };
+
+    const handleRemoveRecent = (q) => {
+        const updated = recentSearches.filter(i => i !== q);
+        setRecentSearches(updated);
+        localStorage.setItem('recent_searches', JSON.stringify(updated));
+    };
+
     const navItems = [
         { id: 'home', label: 'Trang chủ', icon: <HomeIcon size={18} />, path: '/home' },
         { id: 'browse', label: 'Khám phá', icon: <LayoutGrid size={18} />, path: '/home/browse' },
-        { id: 'favorite', label: 'Yêu thích', icon: <Heart size={18} />, path: '/favorite' },
         { id: 'library', label: 'Thư viện', icon: <Library size={18} />, path: '/home/library' },
     ];
 
@@ -156,21 +223,63 @@ const MusicLayout = () => {
 
             {/* Main area */}
             <div className={`flex-1 flex flex-col overflow-hidden ${currentSong ? 'pb-24' : ''}`}> {/* Chỉ padding khi có nhạc */}
-                <header className="flex-shrink-0 flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                    <div className="flex gap-2">
-                        <button onClick={() => window.history.back()} className="w-8 h-8 rounded-full flex items-center justify-center bg-white/5 text-gray-500 hover:text-white transition-colors">
-                            <ChevronLeft size={18} />
-                        </button>
-                        <button onClick={() => window.history.forward()} className="w-8 h-8 rounded-full flex items-center justify-center bg-white/5 text-gray-500 hover:text-white transition-colors">
-                            <ChevronRight size={18} />
-                        </button>
+                <header className="flex-shrink-0 flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', background: '#0a0a0a' }}>
+                    <div className="flex gap-4">
+                        <div className="flex gap-2">
+                            <button onClick={() => window.history.back()} className="w-8 h-8 rounded-full flex items-center justify-center bg-white/5 text-gray-500 hover:text-white transition-colors">
+                                <ChevronLeft size={18} />
+                            </button>
+                            <button onClick={() => window.history.forward()} className="w-8 h-8 rounded-full flex items-center justify-center bg-white/5 text-gray-500 hover:text-white transition-colors">
+                                <ChevronRight size={18} />
+                            </button>
+                        </div>
                     </div>
-                    <div className="flex items-center gap-2 px-4 py-2 rounded-full w-80 bg-white/5 border border-white/5">
-                        <Search size={14} className="text-gray-500" />
-                        <input type="text" placeholder="Tìm kiếm..." value={search} onChange={e => setSearch(e.target.value)}
-                            className="bg-transparent text-sm outline-none flex-1" />
-                    </div>
-                    <div className="flex items-center gap-4">
+
+                    <div className="flex items-center gap-4 flex-1 justify-end pr-4">
+                        {/* Search Bar on the Right */}
+                        <div className="relative" ref={searchRef}>
+                            <div className={`flex items-center gap-3 px-4 py-1.5 rounded-full transition-all duration-300 bg-white/5 border ${isSearchFocused ? 'w-[400px] border-white/40 bg-white/10' : 'w-72 border-white/10 hover:border-white/20'}`}>
+                                <Search size={16} className={`transition-colors ${isSearchFocused ? 'text-white' : 'text-white/40'}`} />
+                                <input 
+                                    type="text" 
+                                    placeholder="Search" 
+                                    value={search} 
+                                    onChange={e => setSearch(e.target.value)}
+                                    onFocus={() => { setIsSearchFocused(true); setShowDropdown(true); }}
+                                    onClick={() => setShowDropdown(true)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' && search.trim()) {
+                                            handleSearchSelect(search);
+                                        }
+                                    }}
+                                    className="bg-transparent text-sm h-8 outline-none flex-1 placeholder:text-white/20 text-white" 
+                                />
+                                {search && (
+                                    <button onClick={() => setSearch('')} className="text-white/40 hover:text-white transition-colors">
+                                        <X size={14} />
+                                    </button>
+                                )}
+                            </div>
+                            
+                            {/* Search Dropdown */}
+                            {showDropdown && (isSearchFocused || search) && (
+                                <SearchDropdown 
+                                    search={search}
+                                    results={searchResults}
+                                    loading={isSearching}
+                                    history={recentSearches}
+                                    onSearchHistory={handleSearchSelect}
+                                    onRemoveHistory={handleRemoveRecent}
+                                    onPlaySong={(song, queue) => playSong(song, queue, { type: 'Searching', name: 'Tìm kiếm' })}
+                                    onNavigate={(path) => {
+                                        navigate(path);
+                                        setShowDropdown(false);
+                                        setIsSearchFocused(false);
+                                    }}
+                                />
+                            )}
+                        </div>
+
                         <UserMenu user={user} onLogout={handleLogout} />
                     </div>
                 </header>

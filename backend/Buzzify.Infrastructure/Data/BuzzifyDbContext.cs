@@ -117,6 +117,10 @@ public partial class BuzzifyDbContext : DbContext
                 .HasMaxLength(255)
                 .HasColumnName("ten");
 
+            entity.Property(e => e.FollowerCount)
+                .HasDefaultValue(0)
+                .HasColumnName("follower_count");
+
             entity.HasOne(d => d.Profile).WithMany(p => p.Artists)
                 .HasForeignKey(d => d.ProfileId)
                 .OnDelete(DeleteBehavior.SetNull)
@@ -311,6 +315,16 @@ public partial class BuzzifyDbContext : DbContext
             entity.Property(e => e.VerificationCodeHash)
                 .HasMaxLength(255)
                 .HasColumnName("verification_code_hash");
+
+            entity.Property(e => e.LastSongId)
+                .HasMaxLength(36)
+                .HasColumnName("last_song_id");
+            entity.Property(e => e.LastQueueIds)
+                .HasColumnName("last_queue_ids");
+            entity.Property(e => e.LastSourceInfo)
+                .HasColumnName("last_source_info");
+            entity.Property(e => e.LastPosition)
+                .HasColumnName("last_position");
 
             entity.HasMany(d => d.ArtistsNavigation).WithMany(p => p.IdNguoiDungs)
                 .UsingEntity<Dictionary<string, object>>(
