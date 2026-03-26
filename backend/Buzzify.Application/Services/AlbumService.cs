@@ -15,10 +15,14 @@ namespace Buzzify.Application.Services
     public class AlbumService : IAlbumService
     {
         private readonly IAlbumRepository _albumRepository;
+        private readonly IFileService _fileService;
+        private readonly ISongRepository _songRepository;
 
-        public AlbumService(IAlbumRepository albumRepository)
+        public AlbumService(IAlbumRepository albumRepository, IFileService fileService, ISongRepository songRepository)
         {
             _albumRepository = albumRepository;
+            _fileService = fileService;
+            _songRepository = songRepository;
         }
 
         public async Task<PagedResultDto<AlbumDto>> GetAllAlbumsAsync(string? searchTerm, string? artistId, int page, int pageSize)
@@ -33,7 +37,8 @@ namespace Buzzify.Application.Services
                 ArtistId = a.ArtistId,
                 ArtistName = a.Artist?.Ten,
                 GenreNames = a.IdTheLoais.Select(g => g.Ten).Take(1).ToList(),
-                NgayPhatHanh = a.NgayPhatHanh
+                NgayPhatHanh = a.NgayPhatHanh,
+                SongsCount = a.Songs.Count()
             }).ToList();
 
             return new PagedResultDto<AlbumDto>
@@ -45,10 +50,20 @@ namespace Buzzify.Application.Services
             };
         }
 
-        public async Task<AlbumDto?> GetAlbumByIdAsync(string id)
+        public async Task<AlbumDto?> GetAlbumByIdAsync(string id, string? requestingUserId = null)
         {
             var a = await _albumRepository.GetAlbumWithSongsByIdAsync(id);
             if (a == null) return null;
+
+            bool isOwner = false;
+            if (!string.IsNullOrEmpty(requestingUserId))
+            {
+                isOwner = a.Artist != null && a.Artist.ProfileId == requestingUserId;
+            }
+
+            var songsToReturn = isOwner 
+                ? a.Songs 
+                : a.Songs.Where(s => s.TrangThai == "published").ToList();
 
             return new AlbumDto
             {
@@ -59,7 +74,7 @@ namespace Buzzify.Application.Services
                 ArtistName = a.Artist?.Ten,
                 GenreNames = a.IdTheLoais.Select(g => g.Ten).Take(1).ToList(),
                 NgayPhatHanh = a.NgayPhatHanh,
-                Songs = a.Songs.OrderBy(s => s.TrackNumber ?? 99).Select(s => new SongDto
+                Songs = songsToReturn.OrderBy(s => s.TrackNumber ?? 99).Select(s => new SongDto
                 {
                     Id = s.Id,
                     TieuDe = s.TieuDe,
@@ -101,27 +116,69 @@ namespace Buzzify.Application.Services
             };
         }
 
-        public async Task UpdateAlbumAsync(string id, CreateAlbumDto updateDto)
+        public async Task UpdateAlbumAsync(string id, CreateAlbumDto updateDto, string? artistIdToVerify = null)
         {
             var album = await _albumRepository.GetByIdAsync(id);
             if (album == null) throw new NotFoundException("Không tìm thấy album.");
+
+            if (!string.IsNullOrEmpty(artistIdToVerify) && album.ArtistId != artistIdToVerify)
+                throw new UnauthorizedException("Bạn không có quyền chỉnh sửa album này.");
+
+            // Nếu thay đổi ảnh bìa, xóa ảnh cũ
+            if (!string.IsNullOrEmpty(album.AnhBia) && album.AnhBia != updateDto.AnhBia)
+            {
+                _fileService.DeleteFile(album.AnhBia);
+            }
 
             album.TieuDe = updateDto.TieuDe;
             album.AnhBia = updateDto.AnhBia;
             album.ArtistId = updateDto.ArtistId;
             album.NgayPhatHanh = updateDto.NgayPhatHanh;
 
-            _albumRepository.Update(album);
             await _albumRepository.SaveChangesAsync();
         }
 
-        public async Task DeleteAlbumAsync(string id)
+        public async Task DeleteAlbumAsync(string id, string? artistIdToVerify = null)
         {
              var album = await _albumRepository.GetByIdAsync(id);
              if (album == null) throw new NotFoundException("Không tìm thấy album.");
 
+             if (!string.IsNullOrEmpty(artistIdToVerify) && album.ArtistId != artistIdToVerify)
+                 throw new UnauthorizedException("Bạn không có quyền xóa album này.");
+
+             // Xóa ảnh bìa vật lý
+             if (!string.IsNullOrEmpty(album.AnhBia))
+             {
+                 _fileService.DeleteFile(album.AnhBia);
+             }
+
              _albumRepository.Remove(album);
              await _albumRepository.SaveChangesAsync();
+        }
+
+        public async Task ReorderTracksAsync(string albumId, List<string> songIds, string? artistIdToVerify = null)
+        {
+             var album = await _albumRepository.GetByIdAsync(albumId);
+             if (album == null) throw new NotFoundException("Không tìm thấy Album.");
+
+             // Kiểm tra quyền
+             if (!string.IsNullOrEmpty(artistIdToVerify) && album.ArtistId != artistIdToVerify)
+                 throw new UnauthorizedException("Bạn không có quyền sắp xếp lại bài hát trong album này.");
+
+             // Update track numbers
+             for (int i = 0; i < songIds.Count; i++)
+             {
+                 var song = await _songRepository.GetByIdAsync(songIds[i]);
+                 if (song != null && song.IdAlbum == albumId)
+                 {
+                     song.TrackNumber = i + 1;
+                     song.Artist = null;
+                     song.IdAlbumNavigation = null;
+                     _songRepository.Update(song);
+                 }
+             }
+
+             await _songRepository.SaveChangesAsync();
         }
 
         public async Task SaveAlbumAsync(string albumId, string userId)

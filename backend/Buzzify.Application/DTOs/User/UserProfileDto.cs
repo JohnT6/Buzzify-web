@@ -9,6 +9,9 @@ namespace Buzzify.Application.DTOs.User
         public string VaiTro { get; set; } = "user";
         public bool IsEmailVerified { get; set; }
         public string? Provider { get; set; }
+        public string? Bio { get; set; }
+        public string? Link { get; set; }
+        public string? AnhDaiDienProvider { get; set; }
         public PlaybackStateDto? PlaybackState { get; set; }
     }
 }

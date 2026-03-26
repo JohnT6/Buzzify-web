@@ -22,5 +22,6 @@ namespace Buzzify.Application.DTOs.Song
         public string? IdAlbum { get; set; }
         public DateOnly? NgayPhatHanh { get; set; }
         public int? TrackNumber { get; set; }
+        public DateTime? ScheduledPublishDate { get; set; }
     }
 }

@@ -14,10 +14,12 @@ namespace Buzzify.Application.Services
     public class PlaylistService : IPlaylistService
     {
         private readonly IPlaylistRepository _playlistRepository;
+        private readonly IFileService _fileService;
 
-        public PlaylistService(IPlaylistRepository playlistRepository)
+        public PlaylistService(IPlaylistRepository playlistRepository, IFileService fileService)
         {
             _playlistRepository = playlistRepository;
+            _fileService = fileService;
         }
 
         public async Task<IEnumerable<PlaylistDto>> GetAllPlaylistsAsync()
@@ -54,8 +56,8 @@ namespace Buzzify.Application.Services
                 LoaiPlaylist = p.LoaiPlaylist,
                 CreatorName = p.IdNguoiTaoNavigation?.HoTen,
                 TopSongImages = p.BaiHatTrongPlaylists.Select(bp => bp.Song.AnhBia).Where(a => !string.IsNullOrEmpty(a)).Take(4).ToList(),
-                SongCount = p.BaiHatTrongPlaylists.Count(),
-                Songs = p.BaiHatTrongPlaylists.Select(bp => new SongDto
+                SongCount = p.BaiHatTrongPlaylists.Count(bp => bp.Song.TrangThai == "published"),
+                Songs = p.BaiHatTrongPlaylists.Where(bp => bp.Song.TrangThai == "published").Select(bp => new SongDto
                 {
                     Id = bp.Song.Id,
                     TieuDe = bp.Song.TieuDe,
@@ -78,12 +80,18 @@ namespace Buzzify.Application.Services
 
         public async Task<PlaylistDto> CreatePlaylistAsync(CreatePlaylistDto createDto, string creatorId)
         {
+            string? imagePath = null;
+            if (!string.IsNullOrEmpty(createDto.AnhBia) && createDto.AnhBia.StartsWith("data:image"))
+            {
+                imagePath = await _fileService.SaveFileFromBase64Async(createDto.AnhBia, "images/playlists");
+            }
+
             var newPlaylist = new Playlist
             {
                 Id = Guid.NewGuid().ToString(),
                 Ten = createDto.Ten,
                 MoTa = createDto.MoTa,
-                AnhBia = createDto.AnhBia,
+                AnhBia = imagePath,
                 CongKhai = createDto.CongKhai ?? true,
                 IdNguoiTao = creatorId,
                 LoaiPlaylist = "user_created"
@@ -115,8 +123,25 @@ namespace Buzzify.Application.Services
 
             p.Ten = updateDto.Ten;
             p.MoTa = updateDto.MoTa;
-            p.AnhBia = updateDto.AnhBia;
+            
             if (updateDto.CongKhai.HasValue) p.CongKhai = updateDto.CongKhai.Value;
+
+            // Xử lý ảnh bìa
+            if (updateDto.AnhBia != null)
+            {
+                if (string.IsNullOrEmpty(updateDto.AnhBia))
+                {
+                    // Xoá ảnh current
+                    if (!string.IsNullOrEmpty(p.AnhBia)) _fileService.DeleteFile(p.AnhBia);
+                    p.AnhBia = null;
+                }
+                else if (updateDto.AnhBia.StartsWith("data:image"))
+                {
+                    // Upload ảnh mới
+                    if (!string.IsNullOrEmpty(p.AnhBia)) _fileService.DeleteFile(p.AnhBia);
+                    p.AnhBia = await _fileService.SaveFileFromBase64Async(updateDto.AnhBia, "images/playlists");
+                }
+            }
 
             _playlistRepository.Update(p);
             await _playlistRepository.SaveChangesAsync();
@@ -131,6 +156,9 @@ namespace Buzzify.Application.Services
             if (p.IdNguoiTao != userId) 
                 throw new UnauthorizedException("Bạn không phải là người tạo danh sách phát này nên không thể xóa.");
 
+            // Xoá ảnh bìa vật lý nếu có
+            if (!string.IsNullOrEmpty(p.AnhBia)) _fileService.DeleteFile(p.AnhBia);
+
             _playlistRepository.Remove(p);
             await _playlistRepository.SaveChangesAsync();
         }
@@ -143,8 +171,6 @@ namespace Buzzify.Application.Services
             if (p.IdNguoiTao != userId) 
                 throw new UnauthorizedException("Bạn không phải là người tạo danh sách phát này nên không thể thêm bài hát.");
 
-            // Can validate if songId really exists here using a ISongRepository
-            
             await _playlistRepository.AddSongAsync(playlistId, songId);
         }
 

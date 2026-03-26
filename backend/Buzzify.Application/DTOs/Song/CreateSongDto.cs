@@ -17,5 +17,8 @@ namespace Buzzify.Application.DTOs.Song
         public string? AnhBia { get; set; }
         public string? ArtistId { get; set; }
         public string? IdAlbum { get; set; }
+        public DateTime? ScheduledPublishDate { get; set; }
+        public string? TrangThai { get; set; }
+        public int? TrackNumber { get; set; }
     }
 }

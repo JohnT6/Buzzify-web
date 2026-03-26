@@ -11,11 +11,15 @@ namespace Buzzify.Application.Interfaces
         Task<ArtistDto> CreateArtistAsync(CreateArtistDto createDto);
         Task UpdateArtistAsync(string id, CreateArtistDto updateDto);
         Task DeleteArtistAsync(string id);
+        Task<ArtistDto?> GetArtistByProfileIdAsync(string profileId);
         
         // Follow logic
         Task FollowArtistAsync(string userId, string artistId);
         Task UnfollowArtistAsync(string userId, string artistId);
         Task<bool> IsFollowingAsync(string userId, string artistId);
         Task<IEnumerable<ArtistDto>> GetFollowedArtistsAsync(string userId);
+        
+        // Stats
+        Task<ArtistStatsDto> GetArtistStatsAsync(string artistId, string range);
     }
 }

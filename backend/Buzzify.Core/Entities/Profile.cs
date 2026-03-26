@@ -48,4 +48,9 @@ public partial class Profile
     public string? LastQueueIds { get; set; }
     public string? LastSourceInfo { get; set; }
     public double? LastPosition { get; set; }
+
+    // User profile extensions
+    public string? Bio { get; set; }
+    public string? Link { get; set; }
+    public string? AnhDaiDienProvider { get; set; }
 }

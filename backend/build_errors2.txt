@@ -1,8 +1,0 @@
-D:\project_WebNangCao\backend\Buzzify.API\Program.cs(8,43): error CS0234: The type or namespace name 'JwtBearer' does not exist in the namespace 'Microsoft.AspNetCore.Authentication' (are you missing an assembly reference?) [D:\project_WebNangCao\backend\Buzzify.API\Buzzify.API.csproj]
-D:\project_WebNangCao\backend\Buzzify.API\Program.cs(15,25): error CS0234: The type or namespace name 'Models' does not exist in the namespace 'Microsoft.OpenApi' (are you missing an assembly reference?) [D:\project_WebNangCao\backend\Buzzify.API\Buzzify.API.csproj]
-
-Build FAILED.
-    0 Warning(s)
-    2 Error(s)
-
-Time Elapsed 00:00:02.14

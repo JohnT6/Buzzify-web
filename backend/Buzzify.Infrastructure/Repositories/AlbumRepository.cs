@@ -19,11 +19,17 @@ namespace Buzzify.Infrastructure.Repositories
             var query = _dbSet.AsNoTracking()
                 .Include(a => a.Artist)
                 .Include(a => a.IdTheLoais)
+                .Include(a => a.Songs)
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
-                query = query.Where(a => a.TieuDe.Contains(searchTerm));
+                var search = searchTerm.ToLower();
+                query = query.Where(a => 
+                    a.TieuDe.ToLower().Contains(search) || 
+                    (a.Artist != null && a.Artist.Ten.ToLower().Contains(search)) ||
+                    a.Songs.Any(s => s.TieuDe.ToLower().Contains(search))
+                );
             }
 
             if (!string.IsNullOrWhiteSpace(artistId))

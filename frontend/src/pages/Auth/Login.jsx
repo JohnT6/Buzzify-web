@@ -45,8 +45,14 @@ const Login = () => {
       const res = await googleLoginApi(credentialResponse.credential);
       if (res && res.token) {
         Cookies.set('access_token', res.token, { expires: 7 });
-        await refreshUser();
-        navigate('/home');
+        const user = await refreshUser();
+        if (user?.vaiTro === 'artist') {
+          navigate('/artist');
+        } else if (user?.vaiTro === 'admin') {
+          navigate('/admin');
+        } else {
+          navigate('/home');
+        }
       }
     } catch (err) {
       console.error('Google login error:', err);
@@ -66,8 +72,14 @@ const Login = () => {
         const res = await facebookLoginApi(authResponse.accessToken);
         if (res && res.token) {
           Cookies.set('access_token', res.token, { expires: 7 });
-          await refreshUser();
-          navigate('/home');
+          const user = await refreshUser();
+          if (user?.vaiTro === 'artist') {
+            navigate('/artist');
+          } else if (user?.vaiTro === 'admin') {
+            navigate('/admin');
+          } else {
+            navigate('/home');
+          }
         }
       } catch (err) {
         console.error('Facebook login error:', err);
@@ -108,8 +120,14 @@ const Login = () => {
         const res = await googleLoginApi(tokenResponse.access_token);
         if (res && res.token) {
           Cookies.set('access_token', res.token, { expires: 7 });
-          await refreshUser();
-          navigate('/home');
+          const user = await refreshUser();
+          if (user?.vaiTro === 'artist') {
+            navigate('/artist');
+          } else if (user?.vaiTro === 'admin') {
+            navigate('/admin');
+          } else {
+            navigate('/home');
+          }
         }
       } catch (err) {
         console.error('Google login error:', err);
@@ -134,8 +152,14 @@ const Login = () => {
       // Backend trả về 'token' trong AuthResponseDto
       if (res && res.token) {
         Cookies.set('access_token', res.token, { expires: 7 });
-        await refreshUser();
-        navigate('/home');
+        const user = await refreshUser();
+        if (user?.vaiTro === 'artist') {
+          navigate('/artist');
+        } else if (user?.vaiTro === 'admin') {
+          navigate('/admin');
+        } else {
+          navigate('/home');
+        }
       } else {
         setError('Đăng nhập không thành công. Hãy kiểm tra lại thông tin.');
       }

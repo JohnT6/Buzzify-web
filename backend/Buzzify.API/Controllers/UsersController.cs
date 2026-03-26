@@ -5,6 +5,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Buzzify.Application.DTOs.User;
 
+
 namespace Buzzify.API.Controllers
 {
     [Route("api/v1/users")]
@@ -39,6 +40,17 @@ namespace Buzzify.API.Controllers
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
             await _userService.UpdatePlaybackStateAsync(userId, state);
+            return NoContent();
+        }
+
+        [Authorize]
+        [HttpPatch("me")]
+        public async Task<IActionResult> UpdateProfile([FromBody] UpdateUserProfileDto profileDto)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            await _userService.UpdateUserProfileAsync(userId, profileDto);
             return NoContent();
         }
     }

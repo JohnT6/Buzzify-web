@@ -3,7 +3,8 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import Cookies from 'js-cookie';
 import { 
     Home as HomeIcon, LayoutGrid, Heart, Library, 
-    Search, ChevronLeft, ChevronRight, LogOut, X 
+    Search, ChevronLeft, ChevronRight, LogOut, X,
+    Plus, ArrowUpDown, Music, LayoutDashboard
 } from 'lucide-react';
 import { 
     logoutApi, getCurrentUserApi, getPlaylistsApi, 
@@ -12,8 +13,16 @@ import {
 import MusicPlayerBar from '../components/MusicPlayer/MusicPlayerBar';
 import SearchDropdown from '../components/Search/SearchDropdown';
 import { useMusic } from '../context/MusicContext';
+import CreatePlaylistModal from '../components/Playlist/CreatePlaylistModal';
 
 const ACCENT = '#0F5E8F';
+
+const API_BASE = import.meta.env.VITE_API_URL || '';
+const imgUrl = (src) => {
+    if (!src) return null;
+    if (src.startsWith('http://') || src.startsWith('https://') || src.startsWith('data:')) return src;
+    return `${API_BASE}${src.startsWith('/') ? '' : '/'}${src}`;
+};
 
 const Logo = () => {
     const navigate = useNavigate();
@@ -36,7 +45,7 @@ const UserMenu = ({ user, onLogout }) => {
     }, []);
 
     const displayName = user?.hoTen || user?.fullName || user?.FullName || 'Người dùng';
-    const avatarSrc = user?.anhDaiDien 
+    const avatarSrc = user?.anhDaiDien || user?.anhDaiDienProvider 
         || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=0F5E8F&color=fff&bold=true`;
 
     return (
@@ -51,6 +60,17 @@ const UserMenu = ({ user, onLogout }) => {
                         <p className="text-sm font-bold text-white truncate">{displayName}</p>
                         <p className="text-xs text-gray-500 truncate mt-0.5">{user?.email || 'Email của bạn'}</p>
                     </div>
+                    {user?.vaiTro === 'artist' && (
+                        <button 
+                            onClick={() => {
+                                setIsOpen(false);
+                                navigate('/artist');
+                            }}
+                            className="w-full text-left px-4 py-2.5 text-sm font-medium flex items-center gap-2 hover:bg-white/10 hover:text-white transition-colors text-blue-400 border-b border-white/5 pb-3 mb-1"
+                        >
+                            <LayoutDashboard size={14} /> Kênh nghệ sĩ
+                        </button>
+                    )}
                     {['Hồ sơ', 'Cài đặt', 'Trợ giúp'].map(label => (
                         <button 
                             key={label} 
@@ -78,9 +98,8 @@ const UserMenu = ({ user, onLogout }) => {
 const MusicLayout = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { currentSong, user, playSong, logout } = useMusic();
-    const [playlists, setPlaylists] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const { currentSong, user, setUser, playSong, logout, myPlaylists, refreshUser } = useMusic();
+    const [loading, setLoading] = useState(false);
     const [search, setSearch] = useState('');
     const [isSearchFocused, setIsSearchFocused] = useState(false);
     const [isSearching, setIsSearching] = useState(false);
@@ -91,32 +110,7 @@ const MusicLayout = () => {
     });
     const searchRef = useRef(null);
     const [showDropdown, setShowDropdown] = useState(false);
-
-    useEffect(() => {
-        (async () => {
-            try {
-                const [pRes, sRes] = await Promise.allSettled([
-                    getPlaylistsApi(), getSavedPlaylistsApi()
-                ]);
-                
-                let combined = [];
-                if (pRes.status === 'fulfilled') {
-                    const data = pRes.value;
-                    combined = [...(Array.isArray(data) ? data : (data?.data || []))];
-                }
-                if (sRes.status === 'fulfilled') {
-                    const sData = sRes.value;
-                    combined = [...combined, ...(Array.isArray(sData) ? sData : (sData?.data || []))];
-                }
-                
-                // Filter and unique
-                const unique = Array.from(new Map(combined.map(p => [p.id, p])).values());
-                setPlaylists(unique);
-
-            } catch (e) { console.error(e); }
-            finally { setLoading(false); }
-        })();
-    }, []);
+    const [isCreatePlaylistModalOpen, setIsCreatePlaylistModalOpen] = useState(false);
 
     const handleLogout = async () => {
         try { await logoutApi(); } catch {}
@@ -163,7 +157,6 @@ const MusicLayout = () => {
         setIsSearchFocused(false);
 
         if (type === 'track') {
-            // Handle play or navigate
             navigate(`/home/search?q=${encodeURIComponent(q)}`);
         } else if (type === 'album') {
             navigate(`/home/album/${item.id}`);
@@ -200,20 +193,69 @@ const MusicLayout = () => {
                     ))}
                 </nav>
 
-                <div className="mt-6 px-4 flex-1 overflow-hidden flex flex-col min-h-0">
-                    <p className="text-[10px] uppercase font-bold tracking-widest mb-3 text-white/30">Playlist của tôi</p>
-                    <div className="space-y-0.5 overflow-y-auto flex-1 hide-scrollbar" data-lenis-prevent>
+                <div className="mt-8 px-4 flex-1 overflow-hidden flex flex-col min-h-0">
+                    <div className="flex items-center justify-between mb-4 pr-1">
+                        <p className="text-[11px] uppercase font-black tracking-[0.1em] text-white/30">All playlists</p>
+                        <div className="flex items-center gap-2">
+                            <button 
+                                onClick={() => setIsCreatePlaylistModalOpen(true)}
+                                className="p-1.5 rounded-full hover:bg-white/5 text-white/40 hover:text-white transition-colors"
+                            >
+                                <Plus size={16} />
+                            </button>
+                            <button className="p-1.5 rounded-full hover:bg-white/5 text-white/40 hover:text-white transition-colors">
+                                <ArrowUpDown size={14} />
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div className="space-y-1 overflow-y-auto flex-1 hide-scrollbar pr-1" data-lenis-prevent>
                         {loading ? (
-                            <div className="animate-pulse space-y-2">
-                                <div className="h-4 bg-white/5 rounded w-3/4"></div>
-                                <div className="h-4 bg-white/5 rounded w-1/2"></div>
+                            <div className="animate-pulse space-y-3">
+                                {[1, 2, 3].map(i => (
+                                    <div key={i} className="flex gap-3">
+                                        <div className="w-10 h-10 bg-white/5 rounded"></div>
+                                        <div className="flex-1 space-y-2 py-1">
+                                            <div className="h-3 bg-white/5 rounded w-3/4"></div>
+                                            <div className="h-2 bg-white/5 rounded w-1/2"></div>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         ) : (
-                            playlists.filter(p => (p.congKhai === true || p.idNguoiTao === user?.id) && !(p.ten?.toLowerCase().includes('thích') || p.loaiPlaylist === 'liked')).map(pl => (
+                            myPlaylists.filter(p => !p.ten?.toLowerCase().includes('thích')).map(pl => (
                                 <button key={pl.id} 
                                     onClick={() => navigate(`/home/playlist/${pl.id}`)}
-                                    className="w-full text-left px-2 py-2 rounded-lg text-sm text-gray-500 hover:text-white hover:bg-white/5 transition-colors truncate cursor-pointer">
-                                    {pl.ten}
+                                    className="w-full flex items-center gap-3 p-2 rounded-xl group hover:bg-white/5 transition-all text-left">
+                                    <div className="w-10 h-10 rounded bg-[#1a1a1a] flex-shrink-0 overflow-hidden border border-white/5 group-hover:border-white/10 transition-colors">
+                                        {pl.anhBia ? (
+                                            <img src={imgUrl(pl.anhBia)} alt="" className="w-full h-full object-cover" />
+                                        ) : (
+                                            <div className="w-full h-full">
+                                                {pl.topSongImages && pl.topSongImages.length >= 4 ? (
+                                                    <div className="grid grid-cols-2 grid-rows-2 w-full h-full bg-[#1a1a1a]">
+                                                        {pl.topSongImages.slice(0, 4).map((img, i) => (
+                                                            <img key={i} src={imgUrl(img)} alt="" className="w-full h-full object-cover" />
+                                                        ))}
+                                                    </div>
+                                                ) : pl.topSongImages && pl.topSongImages.length > 0 ? (
+                                                    <img src={imgUrl(pl.topSongImages[0])} alt="" className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center bg-[#1a1a1a]">
+                                                        <Music size={18} className="text-white/20 group-hover:text-white/40 transition-colors" />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-[13.5px] font-bold text-white/80 group-hover:text-white truncate transition-colors tracking-tight leading-tight">
+                                            {pl.ten}
+                                        </p>
+                                        <p className="text-[11px] text-white/30 group-hover:text-white/50 truncate transition-colors mt-0.5">
+                                            {pl.songCount || pl.baiHatTrongPlaylists?.length || 0} items
+                                        </p>
+                                    </div>
                                 </button>
                             ))
                         )}
@@ -222,7 +264,7 @@ const MusicLayout = () => {
             </aside>
 
             {/* Main area */}
-            <div className={`flex-1 flex flex-col overflow-hidden ${currentSong ? 'pb-24' : ''}`}> {/* Chỉ padding khi có nhạc */}
+            <div className={`flex-1 flex flex-col overflow-hidden ${currentSong ? 'pb-24' : ''}`}>
                 <header className="flex-shrink-0 flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', background: '#0a0a0a' }}>
                     <div className="flex gap-4">
                         <div className="flex gap-2">
@@ -236,7 +278,6 @@ const MusicLayout = () => {
                     </div>
 
                     <div className="flex items-center gap-4 flex-1 justify-end pr-4">
-                        {/* Search Bar on the Right */}
                         <div className="relative" ref={searchRef}>
                             <div className={`flex items-center gap-3 px-4 py-1.5 rounded-full transition-all duration-300 bg-white/5 border ${isSearchFocused ? 'w-[400px] border-white/40 bg-white/10' : 'w-72 border-white/10 hover:border-white/20'}`}>
                                 <Search size={16} className={`transition-colors ${isSearchFocused ? 'text-white' : 'text-white/40'}`} />
@@ -261,7 +302,6 @@ const MusicLayout = () => {
                                 )}
                             </div>
                             
-                            {/* Search Dropdown */}
                             {showDropdown && (isSearchFocused || search) && (
                                 <SearchDropdown 
                                     search={search}
@@ -285,12 +325,18 @@ const MusicLayout = () => {
                 </header>
 
                 <main className="flex-1 overflow-hidden relative flex flex-col">
-                    <Outlet context={{ user }} />
+                    <Outlet context={{ user, setUser }} />
                 </main>
             </div>
 
-            {/* Global Music Player Bar - Chỉ render khi có bài hát */}
-            {currentSong && <MusicPlayerBar />}
+            {isCreatePlaylistModalOpen && (
+                <CreatePlaylistModal 
+                    isOpen={isCreatePlaylistModalOpen} 
+                    onClose={() => setIsCreatePlaylistModalOpen(false)}
+                />
+            )}
+
+            <MusicPlayerBar />
         </div>
     );
 };

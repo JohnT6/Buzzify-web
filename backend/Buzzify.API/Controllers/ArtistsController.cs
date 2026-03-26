@@ -58,5 +58,19 @@ namespace Buzzify.API.Controllers
             var artists = await _artistService.GetFollowedArtistsAsync(userId);
             return Ok(artists);
         }
+
+        [HttpGet("me/stats")]
+        [Microsoft.AspNetCore.Authorization.Authorize(Roles = "artist")]
+        public async Task<IActionResult> GetMyStats([FromQuery] string range = "28d")
+        {
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var artist = await _artistService.GetArtistByProfileIdAsync(userId);
+            if (artist == null) return NotFound(new { error = "Artist profile not found" });
+
+            var stats = await _artistService.GetArtistStatsAsync(artist.Id, range);
+            return Ok(stats);
+        }
     }
 }

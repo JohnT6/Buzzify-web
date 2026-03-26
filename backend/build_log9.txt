@@ -1,8 +1,0 @@
-D:\project_WebNangCao\backend\Buzzify.API\Program.cs(66,25): error CS0103: The name 'ClaimTypes' does not exist in the current context [D:\project_WebNangCao\backend\Buzzify.API\Buzzify.API.csproj]
-D:\project_WebNangCao\backend\Buzzify.API\Program.cs(67,25): error CS0103: The name 'ClaimTypes' does not exist in the current context [D:\project_WebNangCao\backend\Buzzify.API\Buzzify.API.csproj]
-
-Build FAILED.
-    0 Warning(s)
-    2 Error(s)
-
-Time Elapsed 00:00:02.33

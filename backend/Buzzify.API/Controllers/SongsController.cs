@@ -12,10 +12,12 @@ namespace Buzzify.API.Controllers
     public class SongsController : ControllerBase
     {
         private readonly ISongService _songService;
+        private readonly IArtistService _artistService;
 
-        public SongsController(ISongService songService)
+        public SongsController(ISongService songService, IArtistService artistService)
         {
             _songService = songService;
+            _artistService = artistService;
         }
 
         [HttpGet]
@@ -71,6 +73,20 @@ namespace Buzzify.API.Controllers
         {
             await _songService.IncrementPlayCountAsync(id);
             return Ok();
+        }
+        [Authorize(Roles = "artist")]
+        [HttpGet("me")]
+        public async Task<IActionResult> GetMySongs([FromQuery] string? search = null, [FromQuery] int page = 1, [FromQuery] int pageSize = 50)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var artist = await _artistService.GetArtistByProfileIdAsync(userId);
+            if (artist == null) return NotFound(new { error = "Artist profile not found" });
+
+            var pagedResult = await _songService.GetSongsByArtistAsync(artist.Id, search, page, pageSize, true); 
+            
+            return Ok(pagedResult);
         }
     }
 }

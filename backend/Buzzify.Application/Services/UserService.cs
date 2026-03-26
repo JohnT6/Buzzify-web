@@ -1,6 +1,7 @@
 using Buzzify.Application.DTOs.User;
 using Buzzify.Application.Interfaces;
 using Buzzify.Core.Exceptions;
+using Buzzify.Core.Entities;
 using Buzzify.Core.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -12,10 +13,14 @@ namespace Buzzify.Application.Services
     public class UserService : IUserService
     {
         private readonly IProfileRepository _profileRepository;
+        private readonly IArtistRepository _artistRepository;
+        private readonly IFileService _fileService;
 
-        public UserService(IProfileRepository profileRepository)
+        public UserService(IProfileRepository profileRepository, IArtistRepository artistRepository, IFileService fileService)
         {
             _profileRepository = profileRepository;
+            _artistRepository = artistRepository;
+            _fileService = fileService;
         }
 
         public async Task<IEnumerable<UserProfileDto>> GetAllUsersAsync()
@@ -30,6 +35,9 @@ namespace Buzzify.Application.Services
                 VaiTro = u.VaiTro ?? "user",
                 IsEmailVerified = u.IsEmailVerified,
                 Provider = u.Provider,
+                Bio = u.Bio,
+                Link = u.Link,
+                AnhDaiDienProvider = u.AnhDaiDienProvider,
                 PlaybackState = new PlaybackStateDto
                 {
                     LastSongId = u.LastSongId,
@@ -54,6 +62,9 @@ namespace Buzzify.Application.Services
                 VaiTro = u.VaiTro ?? "user",
                 IsEmailVerified = u.IsEmailVerified,
                 Provider = u.Provider,
+                Bio = u.Bio,
+                Link = u.Link,
+                AnhDaiDienProvider = u.AnhDaiDienProvider,
                 PlaybackState = new PlaybackStateDto
                 {
                     LastSongId = u.LastSongId,
@@ -76,8 +87,30 @@ namespace Buzzify.Application.Services
             }
 
             user.VaiTro = newRole.ToLower();
+
+            // Nếu vai trò mới là artist, đảm bảo có bản ghi trong bảng Artists
+            if (user.VaiTro == "artist")
+            {
+                var existingArtist = await _artistRepository.GetAllAsync(); // Check if this user is already an artist
+                var artists = existingArtist.Where(a => a.ProfileId == id).ToList();
+                
+                if (!artists.Any())
+                {
+                    var newArtist = new Artist
+                    {
+                        Id = Guid.NewGuid().ToString(),
+                        Ten = user.HoTen ?? "Nghệ sĩ mới",
+                        ProfileId = user.Id,
+                        FollowerCount = 0,
+                        AnhDaiDien = user.AnhDaiDien
+                    };
+                    await _artistRepository.AddAsync(newArtist);
+                }
+            }
+
             _profileRepository.Update(user);
             await _profileRepository.SaveChangesAsync();
+            await _artistRepository.SaveChangesAsync();
         }
 
         public async Task UpdatePlaybackStateAsync(string userId, PlaybackStateDto state)
@@ -99,8 +132,43 @@ namespace Buzzify.Application.Services
             var user = await _profileRepository.GetByIdAsync(id);
             if (user == null) throw new NotFoundException("Không tìm thấy người dùng.");
 
-            // TODO: In a real app we might want to do soft-delete or handle cascades for user data
+            // Xóa ảnh đại diện vật lý nếu có
+            if (!string.IsNullOrEmpty(user.AnhDaiDien))
+            {
+                _fileService.DeleteFile(user.AnhDaiDien);
+            }
+
             _profileRepository.Remove(user);
+            await _profileRepository.SaveChangesAsync();
+        }
+        
+        public async Task UpdateUserProfileAsync(string userId, UpdateUserProfileDto profileDto)
+        {
+            var user = await _profileRepository.GetByIdAsync(userId);
+            if (user == null) throw new NotFoundException("Không tìm thấy người dùng.");
+
+            user.HoTen = profileDto.HoTen ?? user.HoTen;
+            user.Bio = profileDto.Bio; // Có thể NULL
+            user.Link = profileDto.Link; // Có thể NULL
+            
+            // Xử lý ảnh đại diện
+            if (profileDto.AnhDaiDien != null)
+            {
+                if (string.IsNullOrEmpty(profileDto.AnhDaiDien))
+                {
+                    // Người dùng bấm "Xoá": gán null để hệ thống tự biết dùng provider image hoặc UI avatar
+                    if (!string.IsNullOrEmpty(user.AnhDaiDien)) _fileService.DeleteFile(user.AnhDaiDien);
+                    user.AnhDaiDien = null;
+                }
+                else if (profileDto.AnhDaiDien.StartsWith("data:image"))
+                {
+                    // Upload ảnh mới (Base64)
+                    if (!string.IsNullOrEmpty(user.AnhDaiDien)) _fileService.DeleteFile(user.AnhDaiDien);
+                    user.AnhDaiDien = await _fileService.SaveFileFromBase64Async(profileDto.AnhDaiDien, "images/profiles");
+                }
+            }
+
+            _profileRepository.Update(user);
             await _profileRepository.SaveChangesAsync();
         }
     }

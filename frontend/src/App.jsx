@@ -22,8 +22,9 @@ const PublicRoute = ({ children }) => {
 };
 
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import { Toaster } from 'react-hot-toast';
 
-import { MusicProvider } from './context/MusicContext';
+import { MusicProvider, useMusic } from './context/MusicContext';
 import MusicLayout from './layouts/MusicLayout';
 import PlaylistView from './pages/Home/PlaylistView';
 import LibraryView from './pages/Home/LibraryView';
@@ -32,6 +33,40 @@ import ArtistView from './pages/Home/ArtistView';
 import ProfileView from './pages/Home/ProfileView';
 import ExploreView from './pages/Home/ExploreView';
 import SearchView from './pages/Home/SearchView';
+
+import ArtistLayout from './layouts/ArtistLayout';
+import PerformanceOverview from './pages/Artist/PerformanceOverview';
+import MusicManagement from './pages/Artist/MusicManagement';
+import ArtistAlbumManagement from './pages/Artist/AlbumManagement';
+import ArtistSettings from './pages/Artist/ArtistSettings';
+
+import AdminLayout from './layouts/AdminLayout';
+import AdminDashboard from './pages/Admin/AdminDashboard';
+import UserManagement from './pages/Admin/UserManagement';
+import ArtistManagement from './pages/Admin/ArtistManagement';
+import AdminAlbumManagement from './pages/Admin/AlbumManagement';
+
+const ArtistRoute = ({ children }) => {
+  const token = Cookies.get('access_token');
+  const { user } = useMusic();
+  
+  if (!token) return <Navigate to="/login" />;
+  // Nếu đã có user mà không phải artist thì đá về home
+  if (user && user.vaiTro !== 'artist') return <Navigate to="/home" />;
+  
+  return children;
+};
+
+const AdminRoute = ({ children }) => {
+  const token = Cookies.get('access_token');
+  const { user } = useMusic();
+  
+  if (!token) return <Navigate to="/login" />;
+  if (user && user.vaiTro !== 'admin') return <Navigate to="/home" />;
+  
+  return children;
+};
+
 
 function App() {
   useEffect(() => {
@@ -55,6 +90,7 @@ function App() {
 
   return (
     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+      <Toaster position="top-right" reverseOrder={false} />
       <MusicProvider>
         <BrowserRouter>
           <Routes>
@@ -74,8 +110,25 @@ function App() {
               <Route path="browse" element={<ExploreView />} />
               <Route path="search" element={<SearchView />} />
             </Route>
+
+            {/* Artist Dashboard Routes */}
+            <Route path="/artist" element={<ArtistRoute><ArtistLayout /></ArtistRoute>}>
+              <Route index element={<PerformanceOverview />} />
+              <Route path="music" element={<MusicManagement />} />
+              <Route path="albums" element={<ArtistAlbumManagement />} />
+              <Route path="settings" element={<ArtistSettings />} />
+            </Route>
+
+            {/* Admin Dashboard Routes */}
+            <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
+              <Route index element={<AdminDashboard />} />
+              <Route path="users" element={<UserManagement />} />
+              <Route path="artists" element={<ArtistManagement />} />
+              <Route path="albums" element={<AdminAlbumManagement />} />
+            </Route>
             
             <Route path="*" element={<Navigate to="/" />} />
+
           </Routes>
         </BrowserRouter>
       </MusicProvider>

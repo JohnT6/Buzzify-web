@@ -95,7 +95,7 @@ namespace Buzzify.Infrastructure.Repositories
         public async Task<IEnumerable<Playlist>> GetPlaylistsByUserAsync(string userId)
         {
             return await _context.Playlists
-                .Where(p => p.IdNguoiTao == userId)
+                .Where(p => p.IdNguoiTao == userId && p.LoaiPlaylist == "user_created")
                 .Include(p => p.IdNguoiTaoNavigation)
                 .Include(p => p.BaiHatTrongPlaylists)
                     .ThenInclude(bp => bp.Song)

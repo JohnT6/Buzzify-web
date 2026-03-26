@@ -50,6 +50,9 @@ namespace Buzzify.Application.Services
                 throw new UnauthorizedException("Địa chỉ email chưa được xác thực. Vui lòng kiểm tra hộp thư của bạn.");
             }
 
+            await EnsureFavoritePlaylistAsync(user);
+            await _profileRepository.SaveChangesAsync();
+
             var token = GenerateJwtToken(user);
 
             return new AuthResponseDto
@@ -88,23 +91,10 @@ namespace Buzzify.Application.Services
             newUser.VerificationCodeExpiry = DateTime.Now.AddMinutes(5);
 
             await _profileRepository.AddAsync(newUser);
-
-            // Tự động tạo Playlist Yêu Thích cho người dùng mới
-            var favoritePlaylist = new Playlist
-            {
-                Id = Guid.NewGuid().ToString(),
-                Ten = "Bài Hát Yêu Thích",
-                IdNguoiTao = newUser.Id,
-                IdNguoiTaoNavigation = newUser, // Gán trực tiếp navigation property
-                LoaiPlaylist = "liked_songs",
-                CongKhai = false,
-                MoTa = "Danh sách những bài hát bạn yêu thích nhất."
-            };
-            
-            await _playlistRepository.AddAsync(favoritePlaylist);
-            
-            // Chỉ gọi SaveChanges 1 lần duy nhất cho tất cả các thay đổi trong context
+            await EnsureFavoritePlaylistAsync(newUser);
             await _profileRepository.SaveChangesAsync();
+
+            // Gửi OTP xác thực qua email
 
             // Gửi OTP xác thực qua email
             string emailBody = $@"
@@ -179,24 +169,32 @@ namespace Buzzify.Application.Services
                         Provider = "facebook",
                         ProviderId = facebookId,
                         IsEmailVerified = true, // We trust Facebook verification
-                        AnhDaiDien = string.IsNullOrEmpty(pictureUrl) ? $"https://ui-avatars.com/api/?name={Uri.EscapeDataString(name)}&background=random&color=fff&bold=true" : pictureUrl,
+                        AnhDaiDien = null,
+                        AnhDaiDienProvider = pictureUrl,
                         VaiTro = "user"
                     };
 
                     await _profileRepository.AddAsync(user);
-                    
-                    var favoritePlaylist = new Playlist
-                    {
-                        Id = Guid.NewGuid().ToString(),
-                        Ten = "Bài Hát Yêu Thích",
-                        IdNguoiTao = user.Id,
-                        IdNguoiTaoNavigation = user,
-                        LoaiPlaylist = "liked_songs",
-                        CongKhai = false,
-                        MoTa = "Danh sách những bài hát bạn yêu thích nhất."
-                    };
-                    await _playlistRepository.AddAsync(favoritePlaylist);
+                    await EnsureFavoritePlaylistAsync(user);
                     await _profileRepository.SaveChangesAsync();
+                }
+                else
+                {
+                    // Đảm bảo user cũ cũng có playlist yêu thích
+                    await EnsureFavoritePlaylistAsync(user);
+                    
+                    // Update Provider Image for existing user if login again
+                    if (!string.IsNullOrEmpty(pictureUrl))
+                    {
+                        user.AnhDaiDienProvider = pictureUrl;
+                        // If user hasn't set a custom profile image yet, update the main one too
+                        if (string.IsNullOrEmpty(user.AnhDaiDien) || user.AnhDaiDien.Contains("ui-avatars.com"))
+                        {
+                            user.AnhDaiDien = pictureUrl;
+                        }
+                        _profileRepository.Update(user);
+                        await _profileRepository.SaveChangesAsync();
+                    }
                 }
 
                 var token = GenerateJwtToken(user);
@@ -266,24 +264,32 @@ namespace Buzzify.Application.Services
                         Provider = "google",
                         ProviderId = sub,
                         IsEmailVerified = true,
-                        AnhDaiDien = string.IsNullOrEmpty(picture) ? $"https://ui-avatars.com/api/?name={Uri.EscapeDataString(name)}&background=random&color=fff&bold=true" : picture,
+                        AnhDaiDien = null,
+                        AnhDaiDienProvider = picture,
                         VaiTro = "user"
                     };
 
                     await _profileRepository.AddAsync(user);
-                    
-                    var favoritePlaylist = new Playlist
-                    {
-                        Id = Guid.NewGuid().ToString(),
-                        Ten = "Bài Hát Yêu Thích",
-                        IdNguoiTao = user.Id,
-                        IdNguoiTaoNavigation = user,
-                        LoaiPlaylist = "liked_songs",
-                        CongKhai = false,
-                        MoTa = "Danh sách những bài hát bạn yêu thích nhất."
-                    };
-                    await _playlistRepository.AddAsync(favoritePlaylist);
+                    await EnsureFavoritePlaylistAsync(user);
                     await _profileRepository.SaveChangesAsync();
+                }
+                else
+                {
+                    // Đảm bảo user cũ cũng có playlist yêu thích
+                    await EnsureFavoritePlaylistAsync(user);
+
+                    // Update Provider Image for existing user if login again
+                    if (!string.IsNullOrEmpty(picture))
+                    {
+                        user.AnhDaiDienProvider = picture;
+                        // If user hasn't set a custom profile image yet, update the main one too
+                        if (string.IsNullOrEmpty(user.AnhDaiDien) || user.AnhDaiDien.Contains("ui-avatars.com"))
+                        {
+                            user.AnhDaiDien = picture;
+                        }
+                        _profileRepository.Update(user);
+                        await _profileRepository.SaveChangesAsync();
+                    }
                 }
 
                 var token = GenerateJwtToken(user);
@@ -372,6 +378,24 @@ namespace Buzzify.Application.Services
             // Placeholder: Ở đây bạn có thể thêm logic để lưu log đăng xuất vào Database
             // Hoặc nếu dùng Token Blacklist (Redis), bạn sẽ thêm token vào danh sách bị cấm ở đây.
             await Task.CompletedTask;
+        }
+
+        private async Task EnsureFavoritePlaylistAsync(Profile user)
+        {
+            var playlists = await _playlistRepository.GetPlaylistsByUserAsync(user.Id);
+            if (playlists == null || !playlists.Any(p => p.LoaiPlaylist == "liked_songs"))
+            {
+                var favoritePlaylist = new Playlist
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    Ten = "Bài Hát Yêu Thích",
+                    IdNguoiTao = user.Id,
+                    LoaiPlaylist = "liked_songs",
+                    CongKhai = false,
+                    MoTa = "Danh sách những bài hát bạn yêu thích nhất."
+                };
+                await _playlistRepository.AddAsync(favoritePlaylist);
+            }
         }
 
         private string GenerateJwtToken(Profile user)

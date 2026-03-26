@@ -15,7 +15,7 @@ const ACCENT = '#0F5E8F';
 const API_BASE = import.meta.env.VITE_API_URL || '';
 const imgUrl = (src) => {
     if (!src) return null;
-    if (src.startsWith('http://') || src.startsWith('https://')) return src;
+    if (src.startsWith('http://') || src.startsWith('https://') || src.startsWith('data:')) return src;
     return `${API_BASE}${src.startsWith('/') ? '' : '/'}${src}`;
 };
 
@@ -476,7 +476,13 @@ const MusicPlayerBar = () => {
                 <div className="flex items-center gap-5 w-[33%] min-w-0">
                     <div className="flex-shrink-0 cursor-pointer group" onClick={handleToggleExpand}>
                         <div className="w-14 h-14 rounded-md overflow-hidden bg-gray-900 border border-white/10 relative shadow-2xl">
-                            <img src={imgUrl(currentSong.anhBia)} alt={currentSong.tieuDe} className="w-full h-full object-cover" />
+                            {sourceInfo?.type === 'playlist' && !currentSong.anhBia ? (
+                                // Nếu là playlist và không có ảnh bìa bài hát riêng (thực tế bài hát luôn có, nhưng nếu muốn hiện ảnh playlist)
+                                // Thực tế Bar thường hiện ảnh BÀI HÁT. Nhưng nếu user muốn hiện ảnh lưới của PLAYLIST đang phát:
+                                <img src={imgUrl(currentSong.anhBia)} alt={currentSong.tieuDe} className="w-full h-full object-cover" />
+                            ) : (
+                                <img src={imgUrl(currentSong.anhBia)} alt={currentSong.tieuDe} className="w-full h-full object-cover" />
+                            )}
                         </div>
                     </div>
                     <div className="flex-1 min-w-0 flex flex-col justify-center">

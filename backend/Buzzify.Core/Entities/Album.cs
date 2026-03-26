@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace Buzzify.Core.Entities;
@@ -14,6 +14,8 @@ public partial class Album
     public string? ArtistId { get; set; }
 
     public DateOnly? NgayPhatHanh { get; set; }
+
+    public DateTime? ScheduledPublishDate { get; set; }
 
     public virtual Artist? Artist { get; set; }
 

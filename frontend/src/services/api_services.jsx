@@ -81,6 +81,11 @@ const checkFollowArtistApi = (artistId, userId) => {
     return axios.get(URL_BACKEND);
 }
 
+const getArtistStatsApi = (range = "28d") => {
+    const URL_BACKEND = `/api/v1/artists/me/stats?range=${range}`;
+    return axios.get(URL_BACKEND);
+}
+
 // ─── Songs ────────────────────────────────────────────────────────────────────
 
 const getSongsApi = (search = null, page = 1, pageSize = 20, artistId = null) => {
@@ -98,6 +103,33 @@ const getSongByIdApi = (id) => {
 const playSongApi = (id) => {
     const URL_BACKEND = `/api/v1/songs/${id}/play`;
     return axios.post(URL_BACKEND);
+}
+
+const getMySongsApi = (search = "") => {
+    const URL_BACKEND = `/api/v1/songs/me?search=${encodeURIComponent(search)}`;
+    return axios.get(URL_BACKEND);
+}
+
+const createSongApi = (data) => {
+    const URL_BACKEND = "/api/v1/songs";
+    return axios.post(URL_BACKEND, data);
+}
+
+const updateSongApi = (id, data) => {
+    const URL_BACKEND = `/api/v1/songs/${id}`;
+    return axios.put(URL_BACKEND, data);
+}
+
+const deleteSongApi = (id) => {
+    const URL_BACKEND = `/api/v1/songs/${id}`;
+    return axios.delete(URL_BACKEND);
+}
+
+const uploadMediaApi = (type, formData) => {
+    const URL_BACKEND = `/api/v1/media/upload?type=${type}`;
+    return axios.post(URL_BACKEND, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+    });
 }
 
 // ─── Playlists ────────────────────────────────────────────────────────────────
@@ -131,6 +163,12 @@ const getAlbumsApi = (search = null, page = 1, pageSize = 20, artistId = null) =
     return axios.get(URL_BACKEND);
 }
 
+const getMyAlbumsApi = (search = "", page = 1, pageSize = 50) => {
+    let URL_BACKEND = `/api/v1/albums/me?page=${page}&pageSize=${pageSize}`;
+    if (search) URL_BACKEND += `&search=${encodeURIComponent(search)}`;
+    return axios.get(URL_BACKEND);
+}
+
 const addSongToPlaylistApi = (playlistId, songId) => {
     const URL_BACKEND = `/api/v1/playlists/${playlistId}/Songs/${songId}`;
     return axios.post(URL_BACKEND);
@@ -161,6 +199,31 @@ const getSavedPlaylistsApi = () => {
     return axios.get(URL_BACKEND);
 }
 
+const createAlbumApi = (data) => {
+    const URL_BACKEND = "/api/v1/albums";
+    return axios.post(URL_BACKEND, data);
+}
+
+const updateAlbumApi = (id, data) => {
+    const URL_BACKEND = `/api/v1/albums/${id}`;
+    return axios.put(URL_BACKEND, data);
+}
+
+const deleteAlbumApi = (id) => {
+    const URL_BACKEND = `/api/v1/albums/${id}`;
+    return axios.delete(URL_BACKEND);
+}
+
+const createPlaylistApi = (data) => {
+    const URL_BACKEND = "/api/v1/playlists";
+    return axios.post(URL_BACKEND, data);
+}
+
+const updatePlaylistApi = (id, data) => {
+    const URL_BACKEND = `/api/v1/playlists/${id}`;
+    return axios.put(URL_BACKEND, data);
+}
+
 const saveAlbumApi = (id) => {
     const URL_BACKEND = `/api/v1/albums/${id}/save`;
     return axios.post(URL_BACKEND);
@@ -186,6 +249,11 @@ const getAlbumByIdAsync = (id) => {
     return axios.get(URL_BACKEND);
 }
 
+const reorderTracksApi = (albumId, songIds) => {
+    const URL_BACKEND = `/api/v1/albums/${albumId}/reorder-tracks`;
+    return axios.put(URL_BACKEND, songIds);
+}
+
 const updatePlaybackStateApi = (state) => {
     const URL_BACKEND = "/api/v1/users/me/playback-state";
     return axios.patch(URL_BACKEND, state);
@@ -201,6 +269,49 @@ const searchByTypeApi = (query, type, page = 1, pageSize = 20) => {
     return axios.get(URL_BACKEND);
 }
 
+const updateProfileApi = (profileData) => {
+    const URL_BACKEND = "/api/v1/users/me";
+    return axios.patch(URL_BACKEND, profileData);
+}
+
+// ─── Admin ────────────────────────────────────────────────────────────────────
+
+const getAdminStatsOverviewApi = () => {
+    const URL_BACKEND = "/api/v1/Admin/Stats/Overview";
+    return axios.get(URL_BACKEND);
+}
+
+const getAdminDailyStreamsApi = () => {
+    const URL_BACKEND = "/api/v1/Admin/Stats/Streams/Daily";
+    return axios.get(URL_BACKEND);
+}
+
+const getAdminUsersApi = () => {
+    const URL_BACKEND = "/api/v1/Admin/Users";
+    return axios.get(URL_BACKEND);
+}
+
+const deleteAdminUserApi = (id) => {
+    const URL_BACKEND = `/api/v1/Admin/Users/${id}`;
+    return axios.delete(URL_BACKEND);
+}
+
+const updateAdminUserRoleApi = (id, role) => {
+    const URL_BACKEND = `/api/v1/Admin/Users/${id}/Role`;
+    return axios.put(URL_BACKEND, { Role: role });
+}
+
+const getAdminArtistsApi = () => {
+    const URL_BACKEND = "/api/v1/Admin/Artists";
+    return axios.get(URL_BACKEND);
+}
+
+const deleteAdminArtistApi = (id) => {
+    const URL_BACKEND = `/api/v1/Admin/Artists/${id}`;
+    return axios.delete(URL_BACKEND);
+}
+
+
 export {
     loginApi,
     registerApi,
@@ -211,6 +322,7 @@ export {
     googleLoginApi,
     facebookLoginApi,
     getCurrentUserApi,
+    updateProfileApi,
     getSongsApi,
     getSongByIdApi,
     playSongApi,
@@ -229,6 +341,8 @@ export {
     unsaveAlbumApi,
     checkIfAlbumSavedApi,
     getMyPlaylistsApi,
+    reorderTracksApi,
+    getMyAlbumsApi,
     getAlbumByIdAsync,
     getArtistByIdApi,
     getFollowedArtistsApi,
@@ -238,4 +352,23 @@ export {
     updatePlaybackStateApi,
     globalSearchApi,
     searchByTypeApi,
+    createPlaylistApi,
+    updatePlaylistApi,
+    getArtistStatsApi,
+    createAlbumApi,
+    updateAlbumApi,
+    deleteAlbumApi,
+    getMySongsApi,
+    createSongApi,
+    updateSongApi,
+    deleteSongApi,
+    uploadMediaApi,
+    // Admin
+    getAdminStatsOverviewApi,
+    getAdminDailyStreamsApi,
+    getAdminUsersApi,
+    deleteAdminUserApi,
+    updateAdminUserRoleApi,
+    getAdminArtistsApi,
+    deleteAdminArtistApi,
 };

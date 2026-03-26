@@ -22,7 +22,7 @@ namespace Buzzify.Infrastructure.Repositories
                 .FirstOrDefaultAsync(s => s.Id == (string)id);
         }
 
-        public async Task<(IEnumerable<Song> Item, int TotalCount)> GetPagedAsync(string? searchTerm, string? artistId, int page, int pageSize)
+        public async Task<(IEnumerable<Song> Item, int TotalCount)> GetPagedAsync(string? searchTerm, string? artistId, int page, int pageSize, bool includeScheduled = false)
         {
             var query = _dbSet.AsNoTracking()
                 .Include(s => s.Artist)
@@ -37,6 +37,12 @@ namespace Buzzify.Infrastructure.Repositories
             if (!string.IsNullOrWhiteSpace(artistId))
             {
                 query = query.Where(s => s.ArtistId == artistId);
+            }
+
+            if (!includeScheduled)
+            {
+                var now = System.DateTime.Now;
+                query = query.Where(s => s.TrangThai == "published" && (s.ScheduledPublishDate == null || s.ScheduledPublishDate <= now));
             }
 
             var totalCount = await query.CountAsync();

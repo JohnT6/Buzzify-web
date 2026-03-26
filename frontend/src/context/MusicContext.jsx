@@ -2,7 +2,8 @@ import React, { createContext, useContext, useState, useRef, useEffect } from 'r
 import Cookies from 'js-cookie';
 import { 
     getCurrentUserApi, getPlaylistsApi, getSongsApi, playSongApi, getLikedPlaylistApi, 
-    addSongToPlaylistApi, removeSongFromPlaylistApi, updatePlaybackStateApi, getSongByIdApi 
+    addSongToPlaylistApi, removeSongFromPlaylistApi, updatePlaybackStateApi, getSongByIdApi,
+    getMyPlaylistsApi
 } from '../services/api_services';
 
 const MusicContext = createContext();
@@ -77,6 +78,7 @@ export const MusicProvider = ({ children }) => {
     const [repeatMode, setRepeatMode] = useState('none'); // 'none' | 'all' | 'one'
     const [currentLyrics, setCurrentLyrics] = useState({ synced: [], plain: [], status: 'idle' });
     const [user, setUser] = useState(null);
+    const [myPlaylists, setMyPlaylists] = useState([]);
     const audioRef = useRef(new Audio());
 
     // Sync volume with local storage or default
@@ -92,16 +94,19 @@ export const MusicProvider = ({ children }) => {
             setUser(null);
             setLikedSongIds(new Set());
             setLikedPlaylistId(null);
+            setMyPlaylists([]);
             return;
         }
 
         try {
-            const [uRes, lRes] = await Promise.all([
+            const [uRes, lRes, myRes] = await Promise.all([
                 getCurrentUserApi(),
-                getLikedPlaylistApi()
+                getLikedPlaylistApi(),
+                getMyPlaylistsApi()
             ]);
 
             if (uRes) setUser(uRes);
+            if (myRes) setMyPlaylists(myRes);
 
             if (lRes && lRes.id) {
                 setLikedPlaylistId(lRes.id);
@@ -133,6 +138,7 @@ export const MusicProvider = ({ children }) => {
                     console.error("Lỗi khi khôi phục trạng thái phát nhạc:", err);
                 }
             }
+            return uRes;
         } catch (error) {
             console.error("Lỗi khi cập nhật thông tin người dùng:", error);
             // If token is invalid/expired
@@ -364,7 +370,8 @@ export const MusicProvider = ({ children }) => {
             likedSongIds, volume, audioRef, isShuffle, repeatMode,
             playSong, togglePlay, nextSong, prevSong, toggleLike, 
             setVolume, playFromQueue, setIsShuffle, setRepeatMode,
-            currentLyrics, user, setUser, refreshUser, logout
+            currentLyrics, user, setUser, refreshUser, logout,
+            myPlaylists, setMyPlaylists
         }}>
             {children}
         </MusicContext.Provider>

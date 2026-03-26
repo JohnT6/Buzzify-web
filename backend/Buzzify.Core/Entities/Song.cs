@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace Buzzify.Core.Entities;
@@ -28,6 +28,8 @@ public partial class Song
     public string? UploaderId { get; set; }
 
     public DateTime? NgayTaiLen { get; set; }
+
+    public DateTime? ScheduledPublishDate { get; set; }
 
     public string? TrangThai { get; set; }
 

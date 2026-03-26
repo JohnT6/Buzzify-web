@@ -70,6 +70,7 @@ public partial class BuzzifyDbContext : DbContext
             entity.Property(e => e.TieuDe)
                 .HasMaxLength(255)
                 .HasColumnName("tieu_de");
+            entity.Property(e => e.ScheduledPublishDate).HasColumnName("scheduled_publish_date");
 
             entity.HasOne(d => d.Artist).WithMany(p => p.Albums)
                 .HasForeignKey(d => d.ArtistId)
@@ -326,6 +327,13 @@ public partial class BuzzifyDbContext : DbContext
             entity.Property(e => e.LastPosition)
                 .HasColumnName("last_position");
 
+            entity.Property(e => e.Bio)
+                .HasColumnName("bio");
+            entity.Property(e => e.Link)
+                .HasColumnName("link");
+            entity.Property(e => e.AnhDaiDienProvider)
+                .HasColumnName("anh_dai_dien_provider");
+
             entity.HasMany(d => d.ArtistsNavigation).WithMany(p => p.IdNguoiDungs)
                 .UsingEntity<Dictionary<string, object>>(
                     "NgheSiTheoDoi",
@@ -430,6 +438,7 @@ public partial class BuzzifyDbContext : DbContext
                 .HasMaxLength(36)
                 .HasColumnName("uploader_id");
             entity.Property(e => e.Url).HasColumnName("url");
+            entity.Property(e => e.ScheduledPublishDate).HasColumnName("scheduled_publish_date");
 
             entity.HasOne(d => d.Artist).WithMany(p => p.Songs)
                 .HasForeignKey(d => d.ArtistId)

@@ -79,6 +79,7 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IArtistService, ArtistService>();
 builder.Services.AddScoped<IAlbumService, AlbumService>();
 builder.Services.AddScoped<ISearchService, SearchService>();
+builder.Services.AddScoped<IFileService, FileService>();
 
 // Configure JWT Authentication
 var jwtKey = builder.Configuration["Jwt:Key"] ?? "buzzify_super_secret_key_which_needs_to_be_at_least_32_characters_long";
@@ -147,10 +148,11 @@ app.UseCors("AllowAll");
 var publicPath = Path.Combine(builder.Environment.ContentRootPath, "public");
 if (!Directory.Exists(publicPath)) Directory.CreateDirectory(publicPath);
 
+app.UseStaticFiles();
 app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(publicPath),
-    RequestPath = "" // Map frontend directly "http://localhost:<port>/images/..." -> public/images
+    RequestPath = ""
 });
 
 app.UseHttpsRedirection();
@@ -162,5 +164,12 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Seed data và cập nhật Schema
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    await DataSeeder.SeedAsync(services);
+}
 
 app.Run();

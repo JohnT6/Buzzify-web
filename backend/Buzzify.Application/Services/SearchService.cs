@@ -45,7 +45,7 @@ namespace Buzzify.Application.Services
             // Await EACH query sequentially to avoid DbContext threading issues
             var songs = await _songRepository.GetAll()
                 .Include(s => s.Artist)
-                .Where(s => s.TieuDe != null && s.TieuDe.ToLower().Contains(queryLower))
+                .Where(s => s.TrangThai == "published" && s.TieuDe != null && s.TieuDe.ToLower().Contains(queryLower))
                 .Take(5).ToListAsync();
 
             var albums = await _albumRepository.GetAll()
@@ -120,7 +120,7 @@ namespace Buzzify.Application.Services
                 case "tracks":
                     var songs = await _songRepository.GetAll()
                         .Include(s => s.Artist)
-                        .Where(s => s.TieuDe != null && s.TieuDe.ToLower().Contains(queryLower))
+                        .Where(s => s.TrangThai == "published" && s.TieuDe != null && s.TieuDe.ToLower().Contains(queryLower))
                         .Skip(skip).Take(pageSize).ToListAsync();
                     result.Songs = songs.Select(s => new SongDto 
                     { 

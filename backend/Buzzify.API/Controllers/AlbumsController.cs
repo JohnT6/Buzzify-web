@@ -12,10 +12,12 @@ namespace Buzzify.API.Controllers
     public class AlbumsController : ControllerBase
     {
         private readonly IAlbumService _albumService;
+        private readonly IArtistService _artistService;
 
-        public AlbumsController(IAlbumService albumService)
+        public AlbumsController(IAlbumService albumService, IArtistService artistService)
         {
             _albumService = albumService;
+            _artistService = artistService;
         }
 
         [HttpGet]
@@ -39,7 +41,8 @@ namespace Buzzify.API.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(string id)
         {
-            var album = await _albumService.GetAlbumByIdAsync(id);
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var album = await _albumService.GetAlbumByIdAsync(id, userId);
             if (album == null) return NotFound(new { error = "Album not found." });
             return Ok(album);
         }
@@ -77,29 +80,74 @@ namespace Buzzify.API.Controllers
             return Ok(new { isSaved });
         }
 
-
-        [Authorize(Roles = "admin")] 
+        [Authorize(Roles = "admin,artist")] 
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateAlbumDto createDto)
         {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var artist = await _artistService.GetArtistByProfileIdAsync(userId);
+            if (artist == null) return NotFound(new { error = "Artist profile not found" });
+
+            createDto.ArtistId = artist.Id; // Gán cứng ArtistId từ token
             var created = await _albumService.CreateAlbumAsync(createDto);
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
 
-        [Authorize(Roles = "admin")] 
+        [Authorize(Roles = "admin,artist")] 
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(string id, [FromBody] CreateAlbumDto updateDto)
         {
-            await _albumService.UpdateAlbumAsync(id, updateDto);
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var artist = await _artistService.GetArtistByProfileIdAsync(userId);
+            if (artist == null) return NotFound(new { error = "Artist profile not found" });
+
+            await _albumService.UpdateAlbumAsync(id, updateDto, artist.Id);
             return NoContent();
         }
 
-        [Authorize(Roles = "admin")] 
+        [Authorize(Roles = "admin,artist")]
+        [HttpPut("{id}/reorder-tracks")]
+        public async Task<IActionResult> ReorderTracks(string id, [FromBody] List<string> songIds)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var artist = await _artistService.GetArtistByProfileIdAsync(userId);
+            if (artist == null) return NotFound(new { error = "Artist profile not found" });
+
+            // Gọi AlbumService
+            await _albumService.ReorderTracksAsync(id, songIds, artist.Id);
+            return NoContent();
+        }
+
+        [Authorize(Roles = "admin,artist")] 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(string id)
         {
-            await _albumService.DeleteAlbumAsync(id);
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var artist = await _artistService.GetArtistByProfileIdAsync(userId);
+            if (artist == null) return NotFound(new { error = "Artist profile not found" });
+
+            await _albumService.DeleteAlbumAsync(id, artist.Id);
             return NoContent();
+        }
+        [Authorize(Roles = "artist")]
+        [HttpGet("me")]
+        public async Task<IActionResult> GetMyAlbums([FromQuery] string? search = null, [FromQuery] int page = 1, [FromQuery] int pageSize = 50)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var artist = await _artistService.GetArtistByProfileIdAsync(userId);
+            if (artist == null) return NotFound(new { error = "Artist profile not found" });
+
+            return Ok(await _albumService.GetAllAlbumsAsync(search, artist.Id, page, pageSize));
         }
     }
 }

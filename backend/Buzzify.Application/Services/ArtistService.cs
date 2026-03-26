@@ -3,6 +3,7 @@ using Buzzify.Application.Interfaces;
 using Buzzify.Core.Entities;
 using Buzzify.Core.Exceptions;
 using Buzzify.Core.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,11 +15,19 @@ namespace Buzzify.Application.Services
     {
         private readonly IArtistRepository _artistRepository;
         private readonly IProfileRepository _profileRepository;
+        private readonly ISongRepository _songRepository;
+        private readonly IPlaylistRepository _playlistRepository;
 
-        public ArtistService(IArtistRepository artistRepository, IProfileRepository profileRepository)
+        public ArtistService(
+            IArtistRepository artistRepository, 
+            IProfileRepository profileRepository,
+            ISongRepository songRepository,
+            IPlaylistRepository playlistRepository)
         {
             _artistRepository = artistRepository;
             _profileRepository = profileRepository;
+            _songRepository = songRepository;
+            _playlistRepository = playlistRepository;
         }
 
         public async Task<IEnumerable<ArtistDto>> GetAllArtistsAsync()
@@ -82,6 +91,14 @@ namespace Buzzify.Application.Services
 
             _artistRepository.Update(artist);
             await _artistRepository.SaveChangesAsync();
+        }
+
+        public async Task<ArtistDto?> GetArtistByProfileIdAsync(string profileId)
+        {
+            var artists = await _artistRepository.GetAllAsync();
+            var a = artists.FirstOrDefault(x => x.ProfileId == profileId);
+            if (a == null) return null;
+            return new ArtistDto { Id = a.Id, Ten = a.Ten, AnhDaiDien = a.AnhDaiDien, ProfileId = a.ProfileId, FollowerCount = a.FollowerCount };
         }
 
         public async Task DeleteArtistAsync(string id)
@@ -149,6 +166,68 @@ namespace Buzzify.Application.Services
                 FollowerCount = a.FollowerCount,
                 IsFollowed = true
             });
+        }
+
+        public async Task<ArtistStatsDto> GetArtistStatsAsync(string artistId, string range)
+        {
+            var artistSongs = await _songRepository.GetAll()
+                .Include(s => s.LichSuNghes)
+                .Include(s => s.BaiHatTrongPlaylists)
+                .Where(s => s.ArtistId == artistId)
+                .ToListAsync();
+
+            var artist = await _artistRepository.GetArtistWithFollowersAsync(artistId);
+            
+            var totalStreamsMonth = artistSongs.Sum(s => s.LichSuNghes
+                .Count(lh => lh.NgayNghe.HasValue && lh.NgayNghe.Value.Month == DateTime.Now.Month && lh.NgayNghe.Value.Year == DateTime.Now.Year));
+
+            var totalSaves = 0;
+            var allPlaylists = (await _playlistRepository.GetAllAsync()).ToList();
+            var likedPlaylistIds = allPlaylists.Where(p => p.LoaiPlaylist == "liked_songs").Select(p => p.Id).ToHashSet();
+
+            foreach (var song in artistSongs)
+            {
+                var adds = song.BaiHatTrongPlaylists.ToList();
+                totalSaves += adds.Count(a => likedPlaylistIds.Contains(a.PlaylistId));
+            }
+
+            // Phân bổ lượt nghe theo bài hát (Top 10 trong tháng)
+            var songStats = artistSongs
+                .Select(s => new StatDataPoint
+                {
+                    Date = s.TieuDe,
+                    Value = s.LichSuNghes.Count(lh => lh.NgayNghe.HasValue && lh.NgayNghe.Value.Month == DateTime.Now.Month && lh.NgayNghe.Value.Year == DateTime.Now.Year)
+                })
+                .Where(x => x.Value > 0)
+                .OrderByDescending(x => x.Value)
+                .Take(10)
+                .ToList();
+
+            // Xu hướng lượt nghe (Lượt nghe mỗi ngày trong 14 ngày qua)
+            var trendStats = new List<StatDataPoint>();
+            for (int i = 13; i >= 0; i--)
+            {
+                var targetDate = DateTime.Now.Date.AddDays(-i);
+                var dayListens = artistSongs.Sum(s => s.LichSuNghes
+                    .Count(lh => lh.NgayNghe.HasValue && lh.NgayNghe.Value.Date == targetDate));
+                
+                trendStats.Add(new StatDataPoint 
+                { 
+                    Date = targetDate.ToString("dd/MM"), 
+                    Value = dayListens 
+                });
+            }
+
+            return new ArtistStatsDto
+            {
+                TotalStreams = totalStreamsMonth,
+                TotalSaves = totalSaves,
+                RealTimeListeners = 0,
+                FollowerCount = artist?.FollowerCount ?? 0,
+                FollowerChangeMonth = 0,
+                SongDistribution = songStats,
+                StreamTrend = trendStats
+            };
         }
     }
 }

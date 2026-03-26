@@ -11,5 +11,6 @@ namespace Buzzify.Application.Interfaces
         Task UpdateUserRoleAsync(string id, string newRole);
         Task DeleteUserAsync(string id);
         Task UpdatePlaybackStateAsync(string userId, PlaybackStateDto state);
+        Task UpdateUserProfileAsync(string userId, UpdateUserProfileDto profileDto);
     }
 }
