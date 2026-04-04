@@ -1,0 +1,26 @@
+# Logs
+*.log
+backend/Buzzify.API/error_log.txt
+
+# Personal/Temp documents
+Bao_Cao.docx
+
+# History (Keep only essential docs)
+history/*
+!history/project_context.md
+!history/deployment_guide.md
+
+# Build artifacts & dependencies
+node_modules/
+dist/
+bin/
+obj/
+.env
+.vs/
+.idea/
+.vscode/
+*.user
+*.suo
+*.sln.docstates
+out/
+build/
