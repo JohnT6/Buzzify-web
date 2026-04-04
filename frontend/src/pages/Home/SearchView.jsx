@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate, useOutletContext } from 'react-router-dom';
 import { Search, Play, MoreHorizontal, User, Music2, Disc, LayoutGrid } from 'lucide-react';
 import { globalSearchApi, searchByTypeApi } from '../../services/api_services';
 import ImgFallback, { imgUrl } from '../../components/Common/ImgFallback';
@@ -10,6 +10,7 @@ const SearchView = () => {
     const [searchParams] = useSearchParams();
     const query = searchParams.get('q') || '';
     const navigate = useNavigate();
+    const { user, handlePlaylistContextMenu } = useOutletContext();
     const { playSong, currentSong, isPlaying } = useMusic();
 
     const [activeTab, setActiveTab] = useState('top');
@@ -180,7 +181,11 @@ const SearchView = () => {
                         </h2>
                         <div className="flex items-center gap-6 overflow-x-auto pb-4 hide-scrollbar">
                             {results.playlists.slice(0, 8).map(pl => (
-                                <div key={pl.id} className="flex-shrink-0 group flex flex-col gap-3 cursor-pointer w-40" onClick={() => navigate(`/home/playlist/${pl.id}`)}>
+                                <div key={pl.id} 
+                                    className="flex-shrink-0 group flex flex-col gap-3 cursor-pointer w-40" 
+                                    onClick={() => navigate(`/home/playlist/${pl.id}`)}
+                                    onContextMenu={(e) => handlePlaylistContextMenu(e, pl)}
+                                >
                                     <div className="aspect-square relative rounded-xl overflow-hidden bg-white/5">
                                         <ImgFallback src={pl.anhBia} className="w-full h-full object-cover" />
                                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
@@ -277,7 +282,11 @@ const SearchView = () => {
 
                                 {/* Playlists */}
                                 {activeTab === 'playlists' && results?.playlists?.map((pl, i) => (
-                                    <div key={pl.id} className="group flex flex-col gap-3 cursor-pointer" onClick={() => navigate(`/home/playlist/${pl.id}`)}>
+                                    <div key={pl.id} 
+                                        className="group flex flex-col gap-3 cursor-pointer" 
+                                        onClick={() => navigate(`/home/playlist/${pl.id}`)}
+                                        onContextMenu={(e) => handlePlaylistContextMenu(e, pl)}
+                                    >
                                         <div className="aspect-square relative rounded-xl overflow-hidden bg-white/5">
                                             <ImgFallback src={pl.anhBia} className="w-full h-full object-cover" />
                                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">

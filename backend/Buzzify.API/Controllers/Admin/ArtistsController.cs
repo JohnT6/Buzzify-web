@@ -53,5 +53,19 @@ namespace Buzzify.API.Controllers.Admin
             await _artistService.DeleteArtistAsync(id);
             return NoContent();
         }
+
+        [HttpPut("{id}/ToggleVerify")]
+        public async Task<IActionResult> ToggleVerifyArtist(string id)
+        {
+            await _artistService.ToggleVerifyArtistAsync(id);
+            return Ok(new { message = "Artist verification toggled." });
+        }
+
+        [HttpPut("{id}/Info")]
+        public async Task<IActionResult> UpdateArtistInfo(string id, [FromBody] UpdateArtistAdminDto dto)
+        {
+            await _artistService.UpdateArtistInfoAdminAsync(id, dto);
+            return Ok(new { message = "Artist info updated successfully." });
+        }
     }
 }

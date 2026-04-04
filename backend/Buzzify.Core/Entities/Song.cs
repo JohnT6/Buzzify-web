@@ -33,6 +33,9 @@ public partial class Song
 
     public string? TrangThai { get; set; }
 
+    // Admin Controls
+    public bool IsMuted { get; set; } = false;
+
     public virtual Artist? Artist { get; set; }
 
     public virtual ICollection<BaiHatTrongDailyMix> BaiHatTrongDailyMixes { get; set; } = new List<BaiHatTrongDailyMix>();

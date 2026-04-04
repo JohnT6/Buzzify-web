@@ -8,5 +8,10 @@ namespace Buzzify.Application.DTOs.Artist
         public string? ProfileId { get; set; }
         public int FollowerCount { get; set; }
         public bool IsFollowed { get; set; }
+        
+        // Admin & Profile Info
+        public bool IsVerified { get; set; }
+        public string? Bio { get; set; }
+        public string? CoverImage { get; set; }
     }
 }

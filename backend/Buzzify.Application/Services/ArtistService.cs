@@ -39,7 +39,10 @@ namespace Buzzify.Application.Services
                 Ten = a.Ten,
                 AnhDaiDien = a.AnhDaiDien,
                 ProfileId = a.ProfileId,
-                FollowerCount = a.FollowerCount
+                FollowerCount = a.FollowerCount,
+                IsVerified = a.IsVerified,
+                Bio = a.Bio,
+                CoverImage = a.CoverImage
             });
         }
 
@@ -54,7 +57,10 @@ namespace Buzzify.Application.Services
                 Ten = a.Ten,
                 AnhDaiDien = a.AnhDaiDien,
                 ProfileId = a.ProfileId,
-                FollowerCount = a.FollowerCount
+                FollowerCount = a.FollowerCount,
+                IsVerified = a.IsVerified,
+                Bio = a.Bio,
+                CoverImage = a.CoverImage
             };
         }
 
@@ -98,7 +104,10 @@ namespace Buzzify.Application.Services
             var artists = await _artistRepository.GetAllAsync();
             var a = artists.FirstOrDefault(x => x.ProfileId == profileId);
             if (a == null) return null;
-            return new ArtistDto { Id = a.Id, Ten = a.Ten, AnhDaiDien = a.AnhDaiDien, ProfileId = a.ProfileId, FollowerCount = a.FollowerCount };
+            return new ArtistDto { 
+                Id = a.Id, Ten = a.Ten, AnhDaiDien = a.AnhDaiDien, ProfileId = a.ProfileId, FollowerCount = a.FollowerCount,
+                IsVerified = a.IsVerified, Bio = a.Bio, CoverImage = a.CoverImage 
+            };
         }
 
         public async Task DeleteArtistAsync(string id)
@@ -107,6 +116,29 @@ namespace Buzzify.Application.Services
             if (artist == null) throw new NotFoundException("Không tìm thấy nghệ sĩ.");
 
             _artistRepository.Remove(artist);
+            await _artistRepository.SaveChangesAsync();
+        }
+
+        public async Task ToggleVerifyArtistAsync(string artistId)
+        {
+            var artist = await _artistRepository.GetByIdAsync(artistId);
+            if (artist == null) throw new NotFoundException("Không tìm thấy nghệ sĩ.");
+
+            artist.IsVerified = !artist.IsVerified;
+            _artistRepository.Update(artist);
+            await _artistRepository.SaveChangesAsync();
+        }
+
+        public async Task UpdateArtistInfoAdminAsync(string artistId, UpdateArtistAdminDto dto)
+        {
+            var artist = await _artistRepository.GetByIdAsync(artistId);
+            if (artist == null) throw new NotFoundException("Không tìm thấy nghệ sĩ.");
+
+            artist.IsVerified = dto.IsVerified;
+            artist.Bio = dto.Bio;
+            artist.CoverImage = dto.CoverImage;
+
+            _artistRepository.Update(artist);
             await _artistRepository.SaveChangesAsync();
         }
 
@@ -177,10 +209,19 @@ namespace Buzzify.Application.Services
                 .ToListAsync();
 
             var artist = await _artistRepository.GetArtistWithFollowersAsync(artistId);
-            
-            var totalStreamsMonth = artistSongs.Sum(s => s.LichSuNghes
-                .Count(lh => lh.NgayNghe.HasValue && lh.NgayNghe.Value.Month == DateTime.Now.Month && lh.NgayNghe.Value.Year == DateTime.Now.Year));
 
+            // Xử lý bộ lọc thời gian
+            int days = 28;
+            if (range == "7d") days = 7;
+            else if (range == "1y") days = 365;
+
+            var startDate = DateTime.Now.Date.AddDays(-days);
+
+            // Tổng lượt nghe trong khoảng thời gian đã chọn
+            var totalStreamsTimeRange = artistSongs.Sum(s => s.LichSuNghes
+                .Count(lh => lh.NgayNghe.HasValue && lh.NgayNghe.Value.Date >= startDate));
+
+            // Tổng lượt thả tim (Toàn thời gian do không có ngày lưu)
             var totalSaves = 0;
             var allPlaylists = (await _playlistRepository.GetAllAsync()).ToList();
             var likedPlaylistIds = allPlaylists.Where(p => p.LoaiPlaylist == "liked_songs").Select(p => p.Id).ToHashSet();
@@ -191,19 +232,27 @@ namespace Buzzify.Application.Services
                 totalSaves += adds.Count(a => likedPlaylistIds.Contains(a.PlaylistId));
             }
 
-            // Phân bổ lượt nghe theo bài hát (Top 10 trong tháng)
+            // Người nghe trực tiếp: Số người dùng độc nhất nghe nhạc của artist trong 15 phút qua
+            var realTimeListeners = artistSongs
+                .SelectMany(s => s.LichSuNghes)
+                .Where(lh => lh.NgayNghe.HasValue && lh.NgayNghe.Value >= DateTime.Now.AddMinutes(-15))
+                .Select(lh => lh.IdNguoiDung)
+                .Distinct()
+                .Count();
+
+            // Phân bổ lượt nghe theo bài hát trong khoảng thời gian
             var songStats = artistSongs
                 .Select(s => new StatDataPoint
                 {
                     Date = s.TieuDe,
-                    Value = s.LichSuNghes.Count(lh => lh.NgayNghe.HasValue && lh.NgayNghe.Value.Month == DateTime.Now.Month && lh.NgayNghe.Value.Year == DateTime.Now.Year)
+                    Value = s.LichSuNghes.Count(lh => lh.NgayNghe.HasValue && lh.NgayNghe.Value.Date >= startDate)
                 })
                 .Where(x => x.Value > 0)
                 .OrderByDescending(x => x.Value)
                 .Take(10)
                 .ToList();
 
-            // Xu hướng lượt nghe (Lượt nghe mỗi ngày trong 14 ngày qua)
+            // Xu hướng lượt nghe (Mặc định 14 ngày qua để biểu đồ đẹp như UI yêu cầu)
             var trendStats = new List<StatDataPoint>();
             for (int i = 13; i >= 0; i--)
             {
@@ -220,11 +269,11 @@ namespace Buzzify.Application.Services
 
             return new ArtistStatsDto
             {
-                TotalStreams = totalStreamsMonth,
+                TotalStreams = totalStreamsTimeRange,
                 TotalSaves = totalSaves,
-                RealTimeListeners = 0,
+                RealTimeListeners = realTimeListeners,
                 FollowerCount = artist?.FollowerCount ?? 0,
-                FollowerChangeMonth = 0,
+                FollowerChangeMonth = 0, // Không có bảng lịch sử follower nên không thể tính được % thay đổi
                 SongDistribution = songStats,
                 StreamTrend = trendStats
             };

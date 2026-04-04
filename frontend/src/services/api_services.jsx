@@ -86,6 +86,16 @@ const getArtistStatsApi = (range = "28d") => {
     return axios.get(URL_BACKEND);
 }
 
+const getMyArtistProfileApi = () => {
+    const URL_BACKEND = "/api/v1/artists/me";
+    return axios.get(URL_BACKEND);
+}
+
+const getGenresApi = () => {
+    const URL_BACKEND = "/api/v1/genres";
+    return axios.get(URL_BACKEND);
+}
+
 // ─── Songs ────────────────────────────────────────────────────────────────────
 
 const getSongsApi = (search = null, page = 1, pageSize = 20, artistId = null) => {
@@ -125,8 +135,12 @@ const deleteSongApi = (id) => {
     return axios.delete(URL_BACKEND);
 }
 
-const uploadMediaApi = (type, formData) => {
-    const URL_BACKEND = `/api/v1/media/upload?type=${type}`;
+const uploadMediaApi = (type, formData, artistId = null, albumId = null, resourceId = null) => {
+    let URL_BACKEND = `/api/v1/media/upload?type=${type}`;
+    if (artistId) URL_BACKEND += `&artistId=${artistId}`;
+    if (albumId) URL_BACKEND += `&albumId=${albumId}`;
+    if (resourceId) URL_BACKEND += `&resourceId=${resourceId}`;
+    
     return axios.post(URL_BACKEND, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
     });
@@ -311,6 +325,65 @@ const deleteAdminArtistApi = (id) => {
     return axios.delete(URL_BACKEND);
 }
 
+const toggleAdminUserLockApi = (id) => {
+    const URL_BACKEND = `/api/v1/Admin/Users/${id}/ToggleLock`;
+    return axios.put(URL_BACKEND);
+}
+
+const toggleAdminArtistVerifyApi = (id) => {
+    const URL_BACKEND = `/api/v1/Admin/Artists/${id}/ToggleVerify`;
+    return axios.put(URL_BACKEND);
+}
+
+const updateAdminArtistInfoApi = (id, data) => {
+    const URL_BACKEND = `/api/v1/Admin/Artists/${id}/Info`;
+    return axios.put(URL_BACKEND, data);
+}
+
+const toggleAdminPlaylistFeaturedApi = (id) => {
+    const URL_BACKEND = `/api/v1/Admin/Playlists/${id}/ToggleFeatured`;
+    return axios.put(URL_BACKEND);
+}
+
+const getAdminPlaylistsApi = () => {
+    const URL_BACKEND = "/api/v1/Admin/Playlists";
+    return axios.get(URL_BACKEND);
+};
+
+const createAdminPlaylistApi = (data) => {
+    const URL_BACKEND = "/api/v1/Admin/Playlists";
+    return axios.post(URL_BACKEND, data);
+};
+
+const deleteAdminPlaylistApi = (id) => {
+    const URL_BACKEND = `/api/v1/Admin/Playlists/${id}`;
+    return axios.delete(URL_BACKEND);
+}
+
+const updateAdminPlaylistApi = (id, data) => {
+    const URL_BACKEND = `/api/v1/Admin/Playlists/${id}`;
+    return axios.put(URL_BACKEND, data);
+}
+
+const addAdminPlaylistSongApi = (playlistId, songId) => {
+    const URL_BACKEND = `/api/v1/Admin/Playlists/${playlistId}/Songs/${songId}`;
+    return axios.post(URL_BACKEND);
+}
+
+const removeAdminPlaylistSongApi = (playlistId, songId) => {
+    const URL_BACKEND = `/api/v1/Admin/Playlists/${playlistId}/Songs/${songId}`;
+    return axios.delete(URL_BACKEND);
+}
+
+const toggleAdminSongMuteApi = (id) => {
+    const URL_BACKEND = `/api/v1/Admin/Songs/${id}/ToggleMute`;
+    return axios.put(URL_BACKEND);
+}
+
+const toggleAdminSongHideApi = (id) => {
+    const URL_BACKEND = `/api/v1/Admin/Songs/${id}/ToggleHide`;
+    return axios.put(URL_BACKEND);
+}
 
 export {
     loginApi,
@@ -355,6 +428,8 @@ export {
     createPlaylistApi,
     updatePlaylistApi,
     getArtistStatsApi,
+    getMyArtistProfileApi,
+    getGenresApi,
     createAlbumApi,
     updateAlbumApi,
     deleteAlbumApi,
@@ -371,4 +446,16 @@ export {
     updateAdminUserRoleApi,
     getAdminArtistsApi,
     deleteAdminArtistApi,
+    toggleAdminUserLockApi,
+    toggleAdminArtistVerifyApi,
+    updateAdminArtistInfoApi,
+    toggleAdminPlaylistFeaturedApi,
+    deleteAdminPlaylistApi,
+    toggleAdminSongMuteApi,
+    toggleAdminSongHideApi,
+    getAdminPlaylistsApi,
+    createAdminPlaylistApi,
+    updateAdminPlaylistApi,
+    addAdminPlaylistSongApi,
+    removeAdminPlaylistSongApi,
 };

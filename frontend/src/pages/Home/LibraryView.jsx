@@ -21,6 +21,7 @@ const imgUrl = (src) => {
 };
 
 const LibraryCard = ({ item, type, onClick, onEdit }) => {
+    const { handlePlaylistContextMenu } = useOutletContext();
     const isLikedSongs = type === 'liked';
     const isArtist = type === 'artist';
     const isOwner = type === 'playlist' && item.idNguoiTao === item.currentUserId; 
@@ -78,6 +79,11 @@ const LibraryCard = ({ item, type, onClick, onEdit }) => {
     return (
         <div 
             onClick={onClick}
+            onContextMenu={(e) => {
+                if (type === 'playlist' || type === 'liked') {
+                    handlePlaylistContextMenu(e, item);
+                }
+            }}
             className={`transition-all cursor-pointer group flex flex-col gap-3 relative ${isArtist ? 'items-center' : 'p-3 rounded-xl hover:bg-white/5'}`}
         >
             <div className={`relative aspect-square overflow-hidden ${isArtist ? 'rounded-full w-full' : 'rounded-lg shadow-xl bg-[#1a1a1a] w-full'}`}>
@@ -106,7 +112,7 @@ const LibraryCard = ({ item, type, onClick, onEdit }) => {
 
 const LibraryView = () => {
     const navigate = useNavigate();
-    const { user } = useOutletContext();
+    const { user, handlePlaylistContextMenu } = useOutletContext();
     const { playSong } = useMusic();
     const [likedPlaylist, setLikedPlaylist] = useState(null);
     const [myPlaylists, setMyPlaylists] = useState([]);
@@ -163,9 +169,9 @@ const LibraryView = () => {
     );
 
     return (
-        <div className="flex-1 overflow-y-auto px-8 py-10 custom-main-scroll" data-lenis-prevent>
+        <div className="flex-1 overflow-y-auto px-4 md:px-8 py-6 md:py-10 custom-main-scroll" data-lenis-prevent>
             <div className="flex items-center justify-between mb-8">
-                <h1 className="text-4xl font-black text-white uppercase tracking-tighter">Thư viện của bạn</h1>
+                <h1 className="text-2xl md:text-4xl font-black text-white uppercase tracking-tighter">Thư viện của bạn</h1>
             </div>
 
             <div className="flex gap-4 mb-10 overflow-x-auto pb-2 hide-scrollbar">
@@ -183,7 +189,7 @@ const LibraryView = () => {
                 ))}
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4 md:gap-6">
                 {/* Liked Songs Tile */}
                 {(activeTab === 'all' || activeTab === 'playlists') && likedPlaylist && (
                     <LibraryCard 

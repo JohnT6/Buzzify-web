@@ -71,7 +71,8 @@ namespace Buzzify.API.Controllers
         [HttpPost("{id}/play")]
         public async Task<IActionResult> Play(string id)
         {
-            await _songService.IncrementPlayCountAsync(id);
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            await _songService.IncrementPlayCountAsync(id, userId);
             return Ok();
         }
         [Authorize(Roles = "artist")]

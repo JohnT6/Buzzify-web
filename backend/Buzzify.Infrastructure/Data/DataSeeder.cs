@@ -32,6 +32,9 @@ namespace Buzzify.Infrastructure.Data
 
             // 6. Tạo tài khoản Admin/Artist cụ thể theo yêu cầu
             await SeedSpecificUsersAsync(context);
+
+            // 7. Đánh dấu các playlist hệ thống
+            await SeedSystemPlaylistsAsync(context);
         }
 
         private static async Task UpdateSchemaAsync(BuzzifyDbContext context)
@@ -39,45 +42,38 @@ namespace Buzzify.Infrastructure.Data
             var strategy = context.Database.CreateExecutionStrategy();
             await strategy.ExecuteAsync(async () =>
             {
-                // Thêm cột scheduled_publish_date vào bảng songs
-                try
-                {
-                    await context.Database.ExecuteSqlRawAsync(@"
-                        IF NOT EXISTS (SELECT * FROM sys.columns 
-                            WHERE object_id = OBJECT_ID(N'[dbo].[songs]') 
-                            AND name = 'scheduled_publish_date')
-                        BEGIN
-                            ALTER TABLE [dbo].[songs] ADD [scheduled_publish_date] DATETIME NULL;
-                        END");
-                }
-                catch (Exception ex) { Console.WriteLine($"Error updating songs table: {ex.Message}"); }
-
-                // Thêm cột scheduled_publish_date vào bảng album
-                try
-                {
-                    await context.Database.ExecuteSqlRawAsync(@"
-                        IF NOT EXISTS (SELECT * FROM sys.columns 
-                            WHERE object_id = OBJECT_ID(N'[dbo].[album]') 
-                            AND name = 'scheduled_publish_date')
-                        BEGIN
-                            ALTER TABLE [dbo].[album] ADD [scheduled_publish_date] DATETIME NULL;
-                        END");
-                }
-                catch (Exception ex) { Console.WriteLine($"Error updating album table: {ex.Message}"); }
-
-                // Thêm cột follower_count vào bảng artists
-                try
-                {
-                    await context.Database.ExecuteSqlRawAsync(@"
-                        IF NOT EXISTS (SELECT * FROM sys.columns 
-                            WHERE object_id = OBJECT_ID(N'[dbo].[artists]') 
-                            AND name = 'follower_count')
-                        BEGIN
-                            ALTER TABLE [dbo].[artists] ADD [follower_count] INT DEFAULT 0 NOT NULL;
-                        END");
-                }
-                catch (Exception ex) { Console.WriteLine($"Error updating artists table: {ex.Message}"); }
+                await TryAddColumnAsync(context, "songs", "scheduled_publish_date", "DATETIME NULL");
+                await TryAddColumnAsync(context, "album", "scheduled_publish_date", "DATETIME NULL");
+                await TryAddColumnAsync(context, "artists", "follower_count", "INT DEFAULT 0 NOT NULL");
+                
+                // Admin Controls Schema Updates
+                await TryAddColumnAsync(context, "profiles", "is_locked", "BIT DEFAULT 0 NOT NULL");
+                await TryAddColumnAsync(context, "artists", "is_verified", "BIT DEFAULT 0 NOT NULL");
+                await TryAddColumnAsync(context, "artists", "bio", "NVARCHAR(MAX) NULL");
+                await TryAddColumnAsync(context, "artists", "cover_image", "NVARCHAR(MAX) NULL");
+                
+                await TryAddColumnAsync(context, "playlists", "is_system", "BIT DEFAULT 0 NOT NULL");
+                await TryAddColumnAsync(context, "playlists", "is_featured", "BIT DEFAULT 0 NOT NULL");
+                
+                await TryAddColumnAsync(context, "songs", "is_muted", "BIT DEFAULT 0 NOT NULL");
             });
+        }
+
+        private static async Task TryAddColumnAsync(BuzzifyDbContext context, string table, string column, string definition)
+        {
+            try
+            {
+                string sql = $@"
+                    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[{table}]') AND name = '{column}')
+                    BEGIN
+                        ALTER TABLE [dbo].[{table}] ADD [{column}] {definition};
+                    END";
+                await context.Database.ExecuteSqlRawAsync(sql);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Schema Error] Thêm cột {column} vào {table} thất bại: {ex.Message}");
+            }
         }
 
         private static async Task UpdateAllSongsToPublishedAsync(BuzzifyDbContext context)
@@ -362,5 +358,23 @@ namespace Buzzify.Infrastructure.Data
             catch (Exception ex) { Console.WriteLine($"Error cleaning up hidden songs data: {ex.Message}"); }
         }
 
+        private static async Task SeedSystemPlaylistsAsync(BuzzifyDbContext context)
+        {
+            try
+            {
+                // Đánh dấu các playlist có loai_playlist là 'editorial' hoặc 'system_mix' thành is_system = 1
+                int updatedCount = await context.Database.ExecuteSqlRawAsync(
+                    "UPDATE [dbo].[playlists] SET [is_system] = 1 WHERE [loai_playlist] IN ('editorial', 'system_mix', 'top_charts') OR [id_nguoi_tao] IN (SELECT [id] FROM [dbo].[profiles] WHERE [vai_tro] = 'admin')");
+                
+                if (updatedCount > 0)
+                {
+                    Console.WriteLine($"[Seeder] Marked {updatedCount} playlists as System.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Seeder Error] Lỗi khi cập nhật is_system cho playlists: {ex.Message}");
+            }
+        }
     }
 }

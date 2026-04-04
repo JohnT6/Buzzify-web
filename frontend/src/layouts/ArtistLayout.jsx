@@ -8,7 +8,10 @@ import {
   LogOut, 
   Bell,
   User as UserIcon,
-  ChevronRight
+  ChevronRight,
+  Home,
+  Menu,
+  X
 } from 'lucide-react';
 import { useMusic } from '../context/MusicContext';
 import { cn } from '../lib/utils';
@@ -17,6 +20,10 @@ const ArtistLayout = () => {
   const { user, logout } = useMusic();
   const location = useLocation();
   const navigate = useNavigate();
+  const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
+
+  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+  const closeSidebar = () => setIsSidebarOpen(false);
 
   const menuItems = [
     { name: 'Tổng quan', path: '/artist', icon: LayoutDashboard },
@@ -35,9 +42,20 @@ const ArtistLayout = () => {
   }
 
   return (
-    <div className="flex h-screen bg-[#F8FAFC]">
+    <div className="flex h-screen bg-[#F8FAFC] relative">
+      {/* Sidebar Overlay for Mobile */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-[100] md:hidden backdrop-blur-sm"
+          onClick={closeSidebar}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="w-64 bg-black text-white flex flex-col hidden md:flex">
+      <aside className={cn(
+        "fixed inset-y-0 left-0 w-64 bg-black text-white flex flex-col z-[101] transition-transform duration-300 md:relative md:translate-x-0",
+        isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+      )}>
         <div className="p-6 flex items-center gap-3">
           <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-xl">B</div>
           <span className="text-xl font-bold tracking-tight">Buzzify <span className="text-blue-500">Artist</span></span>
@@ -51,6 +69,7 @@ const ArtistLayout = () => {
               <Link
                 key={item.path}
                 to={item.path}
+                onClick={closeSidebar}
                 className={cn(
                   "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group",
                   isActive 
@@ -80,12 +99,27 @@ const ArtistLayout = () => {
       {/* Main Content */}
       <main className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-8 flex-shrink-0">
-          <h1 className="text-xl font-bold text-gray-800">
-            {menuItems.find(i => i.path === location.pathname)?.name || 'Dashboard'}
-          </h1>
+        <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-4 md:px-8 flex-shrink-0">
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={toggleSidebar}
+              className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg md:hidden transition-all"
+            >
+              <Menu size={24} />
+            </button>
+            <h1 className="text-lg md:text-xl font-bold text-gray-800 truncate max-w-[150px] md:max-w-none">
+              {menuItems.find(i => i.path === location.pathname)?.name || 'Dashboard'}
+            </h1>
+          </div>
 
           <div className="flex items-center gap-4">
+            <Link 
+              to="/home" 
+              className="flex items-center gap-2 px-3 md:px-4 py-2 bg-blue-50 text-blue-600 rounded-xl text-sm font-bold hover:bg-blue-100 transition-all"
+            >
+              <Home size={16} />
+              <span className="hidden sm:inline">Về trang chủ</span>
+            </Link>
             <button className="p-2 text-gray-400 hover:text-black hover:bg-gray-100 rounded-full transition-all relative">
               <Bell size={20} />
               <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
@@ -106,7 +140,7 @@ const ArtistLayout = () => {
         </header>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar" data-lenis-prevent>
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar" data-lenis-prevent>
           <Outlet />
         </div>
       </main>

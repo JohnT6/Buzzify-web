@@ -73,7 +73,7 @@ const AlbumView = () => {
     if (!album) return <div className="p-10 text-white/20 uppercase font-black tracking-widest text-center">Không tìm thấy album.</div>;
 
     return (
-        <div className="flex flex-col h-full overflow-y-auto px-8 py-6 custom-main-scroll relative" data-lenis-prevent>
+        <div className="flex flex-col h-full overflow-y-auto px-4 md:px-8 py-4 md:py-6 custom-main-scroll relative" data-lenis-prevent>
             {/* Background Image (No Blur, Playlist style) */}
             <div className="absolute top-0 left-0 right-0 h-[480px] z-0 overflow-hidden pointer-events-none">
                 <div 
@@ -85,23 +85,23 @@ const AlbumView = () => {
 
             <div className="relative z-10 flex flex-col w-full h-full"> 
                 {/* Header (Playlist style) */}
-                <header className="flex gap-8 items-end mb-10 mt-4">
-                    <div className="w-60 h-60 flex-shrink-0 rounded-xl overflow-hidden shadow-[0_30px_60px_rgba(0,0,0,0.5)] bg-gray-900 border border-white/5 group relative">
+                <header className="flex flex-col md:flex-row gap-6 md:gap-8 items-center md:items-end mb-8 md:mb-10 mt-4 text-center md:text-left">
+                    <div className="w-48 h-48 md:w-60 md:h-60 flex-shrink-0 rounded-xl overflow-hidden shadow-[0_30px_60px_rgba(0,0,0,0.5)] bg-gray-900 border border-white/5 group relative">
                         <ImgFallback src={album.anhBia} alt={album.tieuDe} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                     </div>
                     <div className="flex-1 flex flex-col gap-5">
-                        <div className="flex flex-col gap-1">
-                             <p className="text-[11px] font-black uppercase tracking-[0.3em] text-white/40">Album</p>
+                        <div className="flex flex-col gap-1 items-center md:items-start">
+                             <p className="text-[10px] md:text-[11px] font-black uppercase tracking-[0.3em] text-white/40">Album</p>
                         </div>
-                        <h1 className="text-5xl font-black text-white tracking-tighter uppercase leading-none">{album.tieuDe}</h1>
+                        <h1 className="text-3xl md:text-5xl font-black text-white tracking-tighter uppercase leading-none">{album.tieuDe}</h1>
                         
-                        <div className="flex flex-col gap-4">
-                            <div className="flex items-center gap-2.5 text-[11px] font-black uppercase tracking-widest text-white/60">
+                        <div className="flex flex-col gap-4 items-center md:items-start">
+                            <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5 text-[10px] md:text-[11px] font-black uppercase tracking-widest text-white/60">
                                 <div className="w-5 h-5 rounded-full overflow-hidden bg-white/10 flex items-center justify-center">
                                     <ImgFallback src={album.anhNgheSi || album.anhBia} className="w-full h-full object-cover" alt="" />
                                 </div>
                                 <span className="text-white hover:underline cursor-pointer">{album.artistName || 'Nghệ sĩ'}</span>
-                                <span className="text-white/20">•</span>
+                                <span className="hidden md:inline text-white/20">•</span>
                                 <span>{album.songs?.length || 0} track{album.songs?.length !== 1 ? 's' : ''}</span>
                                 <span className="text-white/20">•</span>
                                 <span>{album.ngayPhatHanh ? new Date(album.ngayPhatHanh).getFullYear() : '2026'}</span>
@@ -113,30 +113,30 @@ const AlbumView = () => {
                 </header>
 
                 {/* Primary Actions (Playlist style) */}
-                <div className="flex items-center justify-between mb-10">
-                    <div className="flex items-center gap-4">
+                <div className="flex flex-wrap items-center justify-between gap-4 mb-8 md:mb-10">
+                    <div className="flex items-center gap-3 md:gap-4 w-full md:w-auto">
                         <button 
                             onClick={handlePlayAlbum}
-                            className="bg-white text-black h-12 px-8 rounded-full flex items-center gap-2 hover:scale-105 active:scale-95 transition-all font-bold shadow-lg"
+                            className="bg-white text-black h-11 md:h-12 px-6 md:px-8 rounded-full flex-1 md:flex-none flex items-center justify-center gap-2 hover:scale-105 active:scale-95 transition-all font-bold shadow-lg"
                         >
                             {isAlbumPlaying && isPlaying ? (
-                                <Pause size={20} fill="black" className="text-black" />
+                                <Pause size={18} md:size={20} fill="black" className="text-black" />
                             ) : (
-                                <Play size={20} fill="black" className="text-black" />
+                                <Play size={18} md:size={20} fill="black" className="text-black" />
                             )}
-                            <span className="text-sm">{isAlbumPlaying && isPlaying ? 'Tạm dừng' : 'Phát'}</span>
+                            <span className="text-xs md:text-sm">{isAlbumPlaying && isPlaying ? 'Tạm dừng' : 'Phát'}</span>
                         </button>
                         
                         <button 
                             onClick={handleAlbumShuffle}
-                            className="bg-white/10 text-white h-12 px-8 rounded-full flex items-center gap-2 hover:bg-white/20 active:scale-95 transition-all font-bold border border-white/5"
+                            className="bg-white/10 text-white h-11 md:h-12 px-6 md:px-8 rounded-full flex-1 md:flex-none flex items-center justify-center gap-2 hover:bg-white/20 active:scale-95 transition-all font-bold border border-white/5"
                         >
-                            <Shuffle size={20} className="text-white" />
-                            <span className="text-sm">Trình tự ngẫu nhiên</span>
+                            <Shuffle size={18} md:size={20} className="text-white" />
+                            <span className="text-xs md:text-sm">Ngẫu nhiên</span>
                         </button>
                     </div>
 
-                    <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-4 md:gap-6 ml-auto md:ml-0">
                         <button 
                             onClick={handleToggleSave}
                             className="flex items-center justify-center w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all border border-white/5 focus:outline-none"
@@ -159,12 +159,12 @@ const AlbumView = () => {
                 <div className="flex-1">
                     <table className="w-full text-left border-collapse table-fixed">
                         <thead className="sticky top-0 z-10 border-b border-white/5 bg-[#0a0a0a]/60 backdrop-blur-xl">
-                            <tr className="text-white/40 text-[10px] uppercase font-black tracking-[0.2em]">
-                                <th className="px-4 py-4 w-16 text-center">#</th>
-                                <th className="px-4 py-4 w-[45%]">Tiêu đề</th>
-                                <th className="px-4 py-4 w-[35%]">Nghệ sĩ</th>
-                                <th className="px-4 py-4 w-20 text-right"><Clock size={16} className="ml-auto" /></th>
-                                <th className="px-4 py-4 w-24"></th>
+                            <tr className="text-white/40 text-[9px] md:text-[10px] uppercase font-black tracking-[0.2em]">
+                                <th className="px-2 md:px-4 py-4 w-10 md:w-16 text-center">#</th>
+                                <th className="px-2 md:px-4 py-4 w-[60%] md:w-[45%]">Tiêu đề</th>
+                                <th className="px-4 py-4 w-[35%] hidden md:table-cell">Nghệ sĩ</th>
+                                <th className="px-4 py-4 w-20 text-right hidden md:table-cell"><Clock size={16} className="ml-auto" /></th>
+                                <th className="px-2 md:px-4 py-4 w-20 md:w-24"></th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-white/[0.02] pb-24">
@@ -187,28 +187,29 @@ const AlbumView = () => {
                                                 <span className="text-[11px] font-bold text-white/30">{song.trackNumber || idx + 1}</span>
                                             )}
                                         </td>
-                                        <td className="px-4 py-4 align-middle">
-                                            <div className="flex items-center gap-4">
+                                        <td className="px-2 md:px-4 py-3 md:py-4 align-middle">
+                                            <div className="flex items-center gap-3 md:gap-4">
                                                 <div className="w-10 h-10 rounded-md overflow-hidden bg-gray-800 flex-shrink-0">
                                                     <ImgFallback src={song.anhBia} alt={song.tieuDe} className="w-full h-full object-cover" />
                                                 </div>
                                                 <div className="min-w-0">
                                                     <p className={`text-xs font-black truncate uppercase tracking-tight ${isActive ? 'text-[#0F5E8F]' : 'text-white'}`}>{song.tieuDe}</p>
+                                                    <p className="md:hidden text-[10px] font-bold text-white/40 uppercase truncate">{song.tenNgheSi}</p>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-4 py-4 align-middle">
+                                        <td className="px-4 py-4 align-middle hidden md:table-cell">
                                             <p className="text-xs font-black text-white/50 truncate uppercase tracking-tight group-hover:text-white/80 transition-colors">
                                                 {song.tenNgheSi}{song.ngheSiHopTac ? `, ${song.ngheSiHopTac}` : ''}
                                             </p>
                                         </td>
-                                        <td className="px-4 py-4 align-middle text-right">
+                                        <td className="px-4 py-4 align-middle text-right hidden md:table-cell">
                                             <span className="text-[10px] font-bold text-white/30 font-mono">
                                                 {Math.floor((song.thoiLuongGiay || 0) / 60)}:{String((song.thoiLuongGiay || 0) % 60).padStart(2, '0')}
                                             </span>
                                         </td>
-                                        <td className="px-4 py-4 align-middle text-right">
-                                            <div className={`flex items-center justify-end gap-4 transition-opacity ${likedSongIds.has(song.id) ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                                        <td className="px-2 md:px-4 py-3 md:py-4 align-middle text-right">
+                                            <div className={`flex items-center justify-end gap-3 md:gap-4 transition-opacity ${likedSongIds.has(song.id) ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                                                 <button 
                                                     onClick={(e) => { e.stopPropagation(); toggleLike(song); }}
                                                     className="hover:scale-110 transition-transform active:scale-95"

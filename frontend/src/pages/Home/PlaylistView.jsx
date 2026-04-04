@@ -163,7 +163,7 @@ const PlaylistView = () => {
     if (!playlist) return <div className="p-8 text-center text-gray-400">Không tìm thấy danh sách phát.</div>;
 
     return (
-        <div className="flex flex-col h-full overflow-y-auto px-8 py-6 custom-main-scroll relative" data-lenis-prevent>
+        <div className="flex flex-col h-full overflow-y-auto px-4 md:px-8 py-4 md:py-6 custom-main-scroll relative" data-lenis-prevent>
             {/* Blurred Background Image */}
             <div className="absolute top-0 left-0 right-0 h-[500px] z-0 overflow-hidden pointer-events-none">
                 <div 
@@ -175,8 +175,8 @@ const PlaylistView = () => {
             
             <div className="relative z-10 flex flex-col w-full h-full"> 
                 {/* Header */}
-                <header className="flex gap-8 items-end mb-10 mt-4">
-                    <div className="w-60 h-60 flex-shrink-0 rounded-xl overflow-hidden shadow-[0_30px_60px_rgba(0,0,0,0.5)] bg-gray-900 border border-white/5 group relative">
+                <header className="flex flex-col md:flex-row gap-6 md:gap-8 items-center md:items-end mb-8 md:mb-10 mt-4 text-center md:text-left">
+                    <div className="w-48 h-48 md:w-60 md:h-60 flex-shrink-0 rounded-xl overflow-hidden shadow-[0_30px_60px_rgba(0,0,0,0.5)] bg-gray-900 border border-white/5 group relative">
                         {playlist.anhBia ? (
                             <img src={imgUrl(playlist.anhBia)} alt={playlist.ten} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                         ) : (
@@ -207,50 +207,50 @@ const PlaylistView = () => {
                         )}
                     </div>
                     <div className="flex-1 flex flex-col gap-5">
-                        <div className="flex flex-col gap-1">
+                        <div className="flex flex-col gap-1 items-center md:items-start text-center md:text-left">
                             {playlist.congKhai && (
-                                <p className="text-[14px] font-black text-white/60 uppercase tracking-tighter">Danh sách phát công khai</p>
+                                <p className="text-[12px] md:text-[14px] font-black text-white/60 uppercase tracking-tighter">Danh sách phát công khai</p>
                             )}
-                            <p className="text-[11px] font-black uppercase tracking-[0.3em] text-white/40">Playlist</p>
+                            <p className="text-[10px] md:text-[11px] font-black uppercase tracking-[0.3em] text-white/40">Playlist</p>
                         </div>
-                        <h1 className="text-5xl font-black text-white tracking-tighter uppercase leading-none">{playlist.ten}</h1>
-                        <div className="flex flex-col gap-4">
-                            <p className="text-white/40 max-w-2xl font-medium leading-relaxed">{playlist.moTa || 'Danh sách phát dành cho bạn.'}</p>
-                            <div className="flex items-center gap-2.5 text-[11px] font-black uppercase tracking-widest">
+                        <h1 className="text-3xl md:text-5xl font-black text-white tracking-tighter uppercase leading-none">{playlist.ten}</h1>
+                        <div className="flex flex-col gap-4 items-center md:items-start">
+                            <p className="text-white/40 max-w-2xl font-medium leading-relaxed text-sm md:text-base">{playlist.moTa || 'Danh sách phát dành cho bạn.'}</p>
+                            <div className="flex items-center justify-center md:justify-start flex-wrap gap-2.5 text-[10px] md:text-[11px] font-black uppercase tracking-widest">
                                 <span className="text-white hover:underline cursor-pointer">{playlist.creatorName || 'Người dùng'}</span>
                                 <span className="text-white/20">•</span>
                                 <span className="text-white/60">{playlist.songs?.length || 0} bài hát</span>
-                                <span className="text-white/20">•</span>
-                                <span className="text-white/40 italic">Mới cập nhật</span>
+                                <span className="hidden md:inline text-white/20">•</span>
+                                <span className="hidden md:inline text-white/40 italic">Mới cập nhật</span>
                             </div>
                         </div>
                     </div>
                 </header>
 
-                <div className="flex items-center justify-between mb-10">
-                    <div className="flex items-center gap-4">
+                <div className="flex flex-wrap items-center justify-between gap-4 mb-8 md:mb-10">
+                    <div className="flex items-center gap-3 md:gap-4 w-full md:w-auto">
                         <button 
                             onClick={handlePlayToggle}
-                            className="bg-white text-black h-12 px-8 rounded-full flex items-center gap-2 hover:scale-105 active:scale-95 transition-all font-bold shadow-lg"
+                            className="bg-white text-black h-11 md:h-12 px-6 md:px-8 rounded-full flex-1 md:flex-none flex items-center justify-center gap-2 hover:scale-105 active:scale-95 transition-all font-bold shadow-lg"
                         >
                             {isCurrentPlaylist && isPlaying ? (
-                                <Pause size={20} fill="black" className="text-black" />
+                                <Pause size={18} md:size={20} fill="black" className="text-black" />
                             ) : (
-                                <Play size={20} fill="black" className="text-black" />
+                                <Play size={18} md:size={20} fill="black" className="text-black" />
                             )}
-                            <span className="text-sm">{isCurrentPlaylist && isPlaying ? 'Tạm dừng' : 'Phát'}</span>
+                            <span className="text-xs md:text-sm">{isCurrentPlaylist && isPlaying ? 'Tạm dừng' : 'Phát'}</span>
                         </button>
                         
                         <button 
                             onClick={handleShufflePlay}
-                            className="bg-white/10 text-white h-12 px-8 rounded-full flex items-center gap-2 hover:bg-white/20 active:scale-95 transition-all font-bold"
+                            className="bg-white/10 text-white h-11 md:h-12 px-6 md:px-8 rounded-full flex-1 md:flex-none flex items-center justify-center gap-2 hover:bg-white/20 active:scale-95 transition-all font-bold"
                         >
-                            <Shuffle size={20} className="text-white" />
-                            <span className="text-sm">Trình tự ngẫu nhiên</span>
+                            <Shuffle size={18} md:size={20} className="text-white" />
+                            <span className="text-xs md:text-sm">Ngẫu nhiên</span>
                         </button>
                     </div>
 
-                    <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-4 md:gap-6 ml-auto md:ml-0 overflow-x-auto hide-scrollbar pb-1">
                         {!isOwner && (
                             <button 
                                 onClick={handleToggleSave}
@@ -314,13 +314,13 @@ const PlaylistView = () => {
                 <div className="flex-1">
                     <table className="w-full text-left border-collapse table-fixed">
                         <thead className="sticky top-0 z-10 border-b border-white/5 bg-[#0a0a0a]/60 backdrop-blur-xl">
-                            <tr className="text-white/40 text-[10px] uppercase font-black tracking-[0.2em]">
-                                <th className="px-4 py-4 w-16 text-center">#</th>
-                                <th className="px-4 py-4 w-[40%]">Tiêu đề</th>
-                                <th className="px-4 py-4 w-[25%]">Nghệ sĩ</th>
-                                <th className="px-4 py-4 w-[25%]">Album</th>
-                                <th className="px-4 py-4 w-20 text-right"><Clock size={16} className="ml-auto" /></th>
-                                <th className="px-4 py-4 w-24"></th>
+                            <tr className="text-white/40 text-[9px] md:text-[10px] uppercase font-black tracking-[0.2em]">
+                                <th className="px-2 md:px-4 py-4 w-10 md:w-16 text-center">#</th>
+                                <th className="px-2 md:px-4 py-4 w-[60%] md:w-[40%]">Tiêu đề</th>
+                                <th className="px-4 py-4 w-[25%] hidden md:table-cell">Nghệ sĩ</th>
+                                <th className="px-4 py-4 w-[25%] hidden lg:table-cell">Album</th>
+                                <th className="px-4 py-4 w-20 text-right hidden md:table-cell"><Clock size={16} className="ml-auto" /></th>
+                                <th className="px-2 md:px-4 py-4 w-16 md:w-24"></th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-white/[0.02]">

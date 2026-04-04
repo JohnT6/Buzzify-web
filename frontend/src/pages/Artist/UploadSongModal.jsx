@@ -10,14 +10,18 @@ import {
   Plus,
   Trash2
 } from 'lucide-react';
-import { uploadMediaApi, createSongApi, updateSongApi, getMyAlbumsApi } from '../../services/api_services';
+import { uploadMediaApi, createSongApi, updateSongApi, getMyAlbumsApi, getMyArtistProfileApi } from '../../services/api_services';
 import { cn } from '../../lib/utils';
 import { toast } from 'react-hot-toast';
+import { useMusic } from '../../context/MusicContext';
+import DateTimePicker from '../../components/Common/DateTimePicker';
 
-const UploadSongModal = ({ isOpen, onClose, onSuccess, editData = null }) => {
+const UploadSongModal = ({ isOpen, onClose, onSuccess, editData = null, initialData = null }) => {
+  const { user } = useMusic();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [albums, setAlbums] = useState([]);
+  const [artistInfo, setArtistInfo] = useState(null);
   
   // Tabs: 'single' | 'album'
   const [activeTab, setActiveTab] = useState('single');
@@ -28,7 +32,9 @@ const UploadSongModal = ({ isOpen, onClose, onSuccess, editData = null }) => {
     idAlbum: '',
     ngheSiHopTac: '',
     scheduledPublishDate: '',
-    trangThai: 'published'
+    trangThai: 'published',
+    thoiLuongGiay: 0,
+    trackNumber: null
   });
   const [singleFiles, setSingleFiles] = useState({ audio: null, cover: null });
   const [singlePreviews, setSinglePreviews] = useState({ cover: null });
@@ -40,6 +46,7 @@ const UploadSongModal = ({ isOpen, onClose, onSuccess, editData = null }) => {
   });
   
   const [albumSongs, setAlbumSongs] = useState([]); 
+  const [existingAlbumSongs, setExistingAlbumSongs] = useState([]);
   // item: { id, file, tieuDe, ngheSiHopTac, trackNumber, anhBiaFile, anhBiaPreview }
 
   useEffect(() => {
@@ -49,10 +56,25 @@ const UploadSongModal = ({ isOpen, onClose, onSuccess, editData = null }) => {
         tieuDe: editData.tieuDe || '',
         idAlbum: editData.idAlbum || '',
         ngheSiHopTac: editData.ngheSiHopTac || '',
-        scheduledPublishDate: editData.scheduledPublishDate ? editData.scheduledPublishDate.substring(0, 16) : '',
-        trangThai: editData.trangThai || 'published'
+        scheduledPublishDate: editData.scheduledPublishDate ? new Date(editData.scheduledPublishDate) : null,
+        trangThai: editData.trangThai || 'published',
+        thoiLuongGiay: editData.thoiLuongGiay || 0,
+        trackNumber: editData.trackNumber || null
       });
       setSinglePreviews({ cover: editData.anhBia || null });
+      setSingleFiles({ audio: null, cover: null });
+    } else if (initialData) {
+      setActiveTab('single');
+      setSingleFormData({
+        tieuDe: '',
+        idAlbum: initialData.idAlbum || '',
+        ngheSiHopTac: '',
+        scheduledPublishDate: null,
+        trangThai: 'published',
+        thoiLuongGiay: 0,
+        trackNumber: initialData.trackNumber || null
+      });
+      setSinglePreviews({ cover: null });
       setSingleFiles({ audio: null, cover: null });
     } else {
       setActiveTab('single');
@@ -60,27 +82,60 @@ const UploadSongModal = ({ isOpen, onClose, onSuccess, editData = null }) => {
         tieuDe: '',
         idAlbum: '',
         ngheSiHopTac: '',
-        scheduledPublishDate: '',
-        trangThai: 'published'
+        scheduledPublishDate: null,
+        trangThai: 'published',
+        thoiLuongGiay: 0,
+        trackNumber: null
       });
       setSinglePreviews({ cover: null });
       setSingleFiles({ audio: null, cover: null });
       
-      setAlbumData({ idAlbum: '', scheduledPublishDate: '' });
+      setAlbumData({ idAlbum: '', scheduledPublishDate: null });
       setAlbumSongs([]);
+      setExistingAlbumSongs([]);
     }
     setError('');
   }, [editData, isOpen]);
 
   useEffect(() => {
-    const fetchAlbums = async () => {
+    const fetchArtistAndAlbums = async () => {
       try {
+        const artistRes = await getMyArtistProfileApi(); 
+        if (artistRes) {
+            setArtistInfo(artistRes);
+        }
+
         const res = await getMyAlbumsApi(null, 1, 100); 
         setAlbums(res.data || res.items || []);
       } catch (err) { }
     };
-    if (isOpen) fetchAlbums();
+    if (isOpen) fetchArtistAndAlbums();
   }, [isOpen]);
+
+  useEffect(() => {
+    const fetchExistingSongs = async () => {
+        const targetAlbumId = activeTab === 'album' ? albumData.idAlbum : singleFormData.idAlbum;
+        if (targetAlbumId) {
+            try {
+                const { getAlbumByIdAsync } = await import('../../services/api_services');
+                const res = await getAlbumByIdAsync(targetAlbumId);
+                const loadedSongs = res.songs || res.data?.songs || [];
+                const sorted = loadedSongs.sort((a, b) => (a.trackNumber || 0) - (b.trackNumber || 0));
+                setExistingAlbumSongs(sorted);
+                
+                // Nếu ở tab Single và chưa có trackNumber, tự động gợi ý số tiếp theo
+                if (activeTab === 'single' && !singleFormData.trackNumber) {
+                    setSingleFormData(prev => ({ ...prev, trackNumber: sorted.length + 1 }));
+                }
+            } catch (err) {
+                console.error("Lỗi khi lấy danh sách bài hát cũ:", err);
+            }
+        } else {
+            setExistingAlbumSongs([]);
+        }
+    };
+    fetchExistingSongs();
+  }, [activeTab, albumData.idAlbum, singleFormData.idAlbum]);
 
   // ================= SINGLE MODE HANDLERS =================
   const handleSingleFileChange = (e, type) => {
@@ -108,11 +163,16 @@ const UploadSongModal = ({ isOpen, onClose, onSuccess, editData = null }) => {
 
     setLoading(true); setError('');
     try {
+      const artistId = artistInfo?.id || 'unknown';
+      const albumId = singleFormData.idAlbum || 'singles';
+
       let audioUrl = editData?.url || '';
       if (singleFiles.audio) {
         const audioData = new FormData();
         audioData.append('file', singleFiles.audio);
-        const audioRes = await uploadMediaApi('audio', audioData);
+        // Tạo UUID cho file nhạc
+        const songResourceId = crypto.randomUUID();
+        const audioRes = await uploadMediaApi('audio', audioData, artistId, albumId, songResourceId);
         audioUrl = audioRes.url || audioRes.data?.url;
       }
 
@@ -120,7 +180,9 @@ const UploadSongModal = ({ isOpen, onClose, onSuccess, editData = null }) => {
       if (singleFiles.cover) {
         const coverData = new FormData();
         coverData.append('file', singleFiles.cover);
-        const coverRes = await uploadMediaApi('song', coverData);
+        // Tạo UUID cho ảnh bìa bài hát
+        const coverResourceId = crypto.randomUUID();
+        const coverRes = await uploadMediaApi('song', coverData, artistId, null, coverResourceId);
         coverUrl = coverRes.url || coverRes.data?.url;
       }
 
@@ -131,7 +193,9 @@ const UploadSongModal = ({ isOpen, onClose, onSuccess, editData = null }) => {
         Url: audioUrl,
         AnhBia: coverUrl,
         ScheduledPublishDate: singleFormData.scheduledPublishDate || null,
-        TrangThai: singleFormData.trangThai
+        TrangThai: singleFormData.trangThai,
+        ThoiLuongGiay: parseFloat(singleFormData.thoiLuongGiay) || 0,
+        TrackNumber: singleFormData.trackNumber ? parseInt(singleFormData.trackNumber) : null
       };
 
       if (editData) {
@@ -149,12 +213,14 @@ const UploadSongModal = ({ isOpen, onClose, onSuccess, editData = null }) => {
 
   // ================= ALBUM MODE HANDLERS =================
   const addAlbumSong = () => {
+    const nextNum = existingAlbumSongs.length + albumSongs.length + 1;
     setAlbumSongs(prev => [...prev, {
       id: Math.random().toString(),
       file: null,
       tieuDe: '',
       ngheSiHopTac: '',
-      trackNumber: prev.length + 1,
+      trackNumber: nextNum,
+      thoiLuongGiay: 0,
       anhBiaFile: null,
       anhBiaPreview: null
     }]);
@@ -197,20 +263,25 @@ const UploadSongModal = ({ isOpen, onClose, onSuccess, editData = null }) => {
 
     setLoading(true); setError('');
     try {
+      const artistId = artistInfo?.id || 'unknown';
+      const albumId = albumData.idAlbum;
+
       for (let i = 0; i < albumSongs.length; i++) {
         const item = albumSongs[i];
         
         let audioUrl = '';
         const audioData = new FormData();
         audioData.append('file', item.file);
-        const audioRes = await uploadMediaApi('audio', audioData);
+        const songResourceId = crypto.randomUUID();
+        const audioRes = await uploadMediaApi('audio', audioData, artistId, albumId, songResourceId);
         audioUrl = audioRes.url || audioRes.data?.url;
 
         let coverUrl = '';
         if (item.anhBiaFile) {
           const coverData = new FormData();
           coverData.append('file', item.anhBiaFile);
-          const coverRes = await uploadMediaApi('song', coverData);
+          const coverResourceId = crypto.randomUUID();
+          const coverRes = await uploadMediaApi('song', coverData, artistId, null, coverResourceId);
           coverUrl = coverRes.url || coverRes.data?.url;
         }
 
@@ -222,7 +293,8 @@ const UploadSongModal = ({ isOpen, onClose, onSuccess, editData = null }) => {
           AnhBia: coverUrl,
           ScheduledPublishDate: albumData.scheduledPublishDate || null,
           TrangThai: 'published',
-          TrackNumber: parseInt(item.trackNumber) || (i + 1)
+          TrackNumber: parseInt(item.trackNumber) || (i + 1),
+          ThoiLuongGiay: parseFloat(item.thoiLuongGiay) || 0
         };
         await createSongApi(payload);
       }
@@ -353,6 +425,31 @@ const UploadSongModal = ({ isOpen, onClose, onSuccess, editData = null }) => {
                   />
                 </div>
 
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Thời lượng (giây)</label>
+                        <input 
+                            type="number" 
+                            value={singleFormData.thoiLuongGiay}
+                            onChange={(e) => setSingleFormData({...singleFormData, thoiLuongGiay: e.target.value})}
+                            className="w-full px-4 py-3 bg-white border border-gray-200 shadow-sm rounded-2xl focus:ring-2 focus:ring-blue-500/20 transition-all font-medium text-gray-800"
+                            placeholder="Ví dụ: 180"
+                            min="0"
+                        />
+                    </div>
+                    <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Số thứ tự (Track No)</label>
+                        <input 
+                            type="number" 
+                            value={singleFormData.trackNumber || ''}
+                            onChange={(e) => setSingleFormData({...singleFormData, trackNumber: e.target.value})}
+                            className="w-full px-4 py-3 bg-white border border-gray-200 shadow-sm rounded-2xl focus:ring-2 focus:ring-blue-500/20 transition-all font-medium text-gray-800"
+                            placeholder="Tự động"
+                            min={singleFormData.idAlbum ? existingAlbumSongs.length + 1 : 1}
+                        />
+                    </div>
+                </div>
+
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Thuộc Album / EP</label>
                   <select 
@@ -396,13 +493,12 @@ const UploadSongModal = ({ isOpen, onClose, onSuccess, editData = null }) => {
                   </div>
                   {!editData && (
                     <>
-                      <input 
-                        type="datetime-local" 
-                        value={singleFormData.scheduledPublishDate}
-                        onChange={(e) => setSingleFormData({...singleFormData, scheduledPublishDate: e.target.value})}
-                        className="w-full px-4 py-2.5 bg-white border-blue-200/50 rounded-xl focus:ring-2 focus:ring-blue-500/20 transition-all text-sm font-medium text-gray-700 border shadow-sm"
+                      <DateTimePicker 
+                        selected={singleFormData.scheduledPublishDate}
+                        onChange={(date) => setSingleFormData({...singleFormData, scheduledPublishDate: date})}
+                        placeholderText="Chọn thời điểm ra mắt"
                       />
-                      <p className="text-[10px] text-blue-400 font-medium">Để trống nếu bạn muốn đăng ngay lập tức.</p>
+                      <p className="text-[10px] text-blue-400 font-medium ml-1">Để trống nếu bạn muốn đăng ngay lập tức.</p>
                     </>
                   )}
                 </div>
@@ -430,17 +526,11 @@ const UploadSongModal = ({ isOpen, onClose, onSuccess, editData = null }) => {
                     </div>
                     <div className="space-y-1.5">
                         <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Hẹn giờ mở khóa cho toàn bộ Album</label>
-                        <div className="flex items-center gap-3">
-                            <input 
-                                type="datetime-local" 
-                                value={albumData.scheduledPublishDate}
-                                onChange={(e) => setAlbumData({...albumData, scheduledPublishDate: e.target.value})}
-                                className="w-full px-4 py-2.5 bg-white border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500/20 transition-all text-sm font-medium text-gray-700 border shadow-sm"
-                            />
-                            <div className="p-3 bg-blue-50 text-blue-500 rounded-xl hidden sm:block">
-                                <CalendarIcon size={18} />
-                            </div>
-                        </div>
+                        <DateTimePicker 
+                            selected={albumData.scheduledPublishDate}
+                            onChange={(date) => setAlbumData({...albumData, scheduledPublishDate: date})}
+                            placeholderText="Chọn thời gian mở khóa Album"
+                        />
                     </div>
                 </div>
 
@@ -454,8 +544,47 @@ const UploadSongModal = ({ isOpen, onClose, onSuccess, editData = null }) => {
                     </div>
 
                     <div className="space-y-4">
+                        {/* Hiển thị các bài hát đã có (Read Only) */}
+                        {existingAlbumSongs.map((song) => (
+                            <div key={song.id} className="bg-gray-100/50 rounded-3xl p-5 border border-gray-200 shadow-sm flex flex-col md:flex-row gap-6 opacity-70 grayscale-[0.5]">
+                                <div className="flex flex-col items-center gap-2">
+                                    <div className="w-24 h-24 rounded-2xl overflow-hidden shadow-sm">
+                                        <img src={song.anhBia || "/default-song.png"} className="w-full h-full object-cover" alt="" />
+                                    </div>
+                                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest text-center">Đã có trong Album</span>
+                                </div>
+                                <div className="flex-1 space-y-4">
+                                    <div className="flex flex-col sm:flex-row gap-4">
+                                        <div className="sm:w-[40%] px-4 py-3 rounded-xl border border-gray-200 bg-white/50 flex items-center gap-3">
+                                            <Music size={16} className="text-gray-400" />
+                                            <span className="text-[11px] font-bold text-gray-500 uppercase truncate">File nhạc đã tải</span>
+                                        </div>
+                                        <div className="flex-1">
+                                            <div className="w-full px-4 h-11 bg-white/50 border border-gray-200 rounded-xl flex items-center font-bold text-gray-400 text-sm">
+                                                {song.tieuDe}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-col sm:flex-row gap-4">
+                                        <div className="flex-1">
+                                            <div className="w-full px-4 h-11 bg-white/50 border border-gray-200 rounded-xl flex items-center font-medium text-gray-400 text-sm">
+                                                {song.ngheSiHopTac || "Nghệ sĩ chính"}
+                                            </div>
+                                        </div>
+                                        <div className="sm:w-32 flex items-center gap-2">
+                                            <span className="text-xs font-bold text-gray-400">Track No:</span>
+                                            <div className="w-full px-3 h-11 bg-white/50 border border-gray-200 rounded-xl flex items-center justify-center font-bold text-gray-400 text-sm">
+                                                {song.trackNumber}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+
+                        {/* Các bài hát đang thêm mới */}
                         {albumSongs.map((song, idx) => (
-                            <div key={song.id} className="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm flex flex-col md:flex-row gap-6 relative group animate-in slide-in-from-bottom-2 duration-300">
+                            <div key={song.id} className="bg-white rounded-3xl p-5 border border-blue-100 shadow-md flex flex-col md:flex-row gap-6 relative group animate-in slide-in-from-bottom-2 duration-300">
                                 {/* X Nút xóa */}
                                 <button 
                                     onClick={() => removeAlbumSong(song.id)}
@@ -466,7 +595,7 @@ const UploadSongModal = ({ isOpen, onClose, onSuccess, editData = null }) => {
                                 
                                 {/* Track Number Badge */}
                                 <div className="absolute top-4 left-4 w-7 h-7 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center font-bold text-sm shadow-sm md:hidden">
-                                    {idx + 1}
+                                    {song.trackNumber}
                                 </div>
 
                                 {/* Col: Ảnh Bìa */}
@@ -474,8 +603,8 @@ const UploadSongModal = ({ isOpen, onClose, onSuccess, editData = null }) => {
                                     <div 
                                         onClick={() => document.getElementById(`cover-upload-${song.id}`).click()}
                                         className={cn(
-                                            "w-24 h-24 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-all overflow-hidden flex-shrink-0 group/cover",
-                                            song.anhBiaPreview ? "border-transparent" : "border-gray-200 hover:border-blue-400 bg-gray-50 hover:bg-blue-50/30"
+                                            "w-24 h-24 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-all overflow-hidden flex-shrink-0 group/cover shadow-sm",
+                                            song.anhBiaPreview ? "border-transparent" : "border-blue-100 hover:border-blue-400 bg-blue-50/20 hover:bg-blue-50/50"
                                         )}
                                     >
                                         {song.anhBiaPreview ? (
@@ -488,7 +617,7 @@ const UploadSongModal = ({ isOpen, onClose, onSuccess, editData = null }) => {
                                         )}
                                         <input id={`cover-upload-${song.id}`} type="file" accept="image/*" className="hidden" onChange={(e) => handleAlbumSongFile(song.id, 'cover', e.target.files[0])} />
                                     </div>
-                                    <span className="text-[10px] text-gray-400 font-bold uppercase track-widest">Ảnh bìa (tùy chọn)</span>
+                                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Ảnh mới (tùy chọn)</span>
                                 </div>
 
                                 {/* Col: Form thông tin */}
@@ -499,7 +628,7 @@ const UploadSongModal = ({ isOpen, onClose, onSuccess, editData = null }) => {
                                             onClick={() => document.getElementById(`audio-upload-${song.id}`).click()}
                                             className={cn(
                                                 "sm:w-[40%] px-4 py-3 rounded-xl border border-dashed flex items-center gap-3 cursor-pointer transition-all shadow-sm",
-                                                song.file ? "border-green-200 bg-green-50/50" : "border-gray-200 bg-gray-50 hover:bg-blue-50/30 hover:border-blue-300"
+                                                song.file ? "border-green-200 bg-green-50/50" : "border-blue-200 bg-blue-50/30 hover:bg-blue-100/40 hover:border-blue-400"
                                             )}
                                         >
                                             <div className={cn("p-2 rounded-lg", song.file ? "bg-green-500 text-white" : "bg-white border text-blue-500")}>
@@ -509,7 +638,7 @@ const UploadSongModal = ({ isOpen, onClose, onSuccess, editData = null }) => {
                                                 {song.file ? (
                                                     <p className="text-xs font-bold text-green-700 truncate">{song.file.name}</p>
                                                 ) : (
-                                                    <p className="text-[11px] font-bold text-gray-500 uppercase">Tải tệp âm thanh (Bắt buộc)</p>
+                                                    <p className="text-[11px] font-bold text-blue-600/70 uppercase">Tải tệp âm thanh (Bắt buộc)</p>
                                                 )}
                                             </div>
                                             <input id={`audio-upload-${song.id}`} type="file" accept="audio/*" className="hidden" onChange={(e) => handleAlbumSongFile(song.id, 'audio', e.target.files[0])} />
@@ -520,21 +649,32 @@ const UploadSongModal = ({ isOpen, onClose, onSuccess, editData = null }) => {
                                                 type="text" 
                                                 value={song.tieuDe}
                                                 onChange={(e) => updateAlbumSongItem(song.id, 'tieuDe', e.target.value)}
-                                                className="w-full px-4 h-full bg-white border border-gray-200 shadow-sm rounded-xl focus:ring-2 focus:ring-blue-500/20 transition-all font-bold text-gray-800 text-sm"
+                                                className="w-full px-4 h-11 bg-white border border-gray-200 shadow-sm rounded-xl focus:ring-2 focus:ring-blue-500/20 transition-all font-bold text-gray-800 text-sm"
                                                 placeholder="Tên bài hát (Bắt buộc)"
                                             />
                                         </div>
                                     </div>
 
-                                    {/* Dòng 2: Nghệ sĩ hợp tác & Track Number */}
+                                    {/* Dòng 2: Nghệ sĩ hợp tác, Track Number & Thời lượng */}
                                     <div className="flex flex-col sm:flex-row gap-4">
                                         <div className="flex-1">
                                             <input 
                                                 type="text" 
                                                 value={song.ngheSiHopTac}
                                                 onChange={(e) => updateAlbumSongItem(song.id, 'ngheSiHopTac', e.target.value)}
-                                                className="w-full px-4 h-full py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 transition-all font-medium text-gray-800 text-sm"
+                                                className="w-full px-4 h-11 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 transition-all font-medium text-gray-800 text-sm"
                                                 placeholder="Nghệ sĩ hợp tác (không bắt buộc)"
+                                            />
+                                        </div>
+                                        <div className="sm:w-32 flex items-center gap-2">
+                                            <span className="text-xs font-bold text-gray-400 whitespace-nowrap hidden sm:block">Giây:</span>
+                                            <input 
+                                                type="number" 
+                                                value={song.thoiLuongGiay}
+                                                onChange={(e) => updateAlbumSongItem(song.id, 'thoiLuongGiay', e.target.value)}
+                                                className="w-full px-3 h-11 bg-white border border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 transition-all font-bold text-blue-600 text-sm text-center"
+                                                min="0"
+                                                placeholder="Giây"
                                             />
                                         </div>
                                         <div className="sm:w-32 flex items-center gap-2">
@@ -543,8 +683,8 @@ const UploadSongModal = ({ isOpen, onClose, onSuccess, editData = null }) => {
                                                 type="number" 
                                                 value={song.trackNumber}
                                                 onChange={(e) => updateAlbumSongItem(song.id, 'trackNumber', e.target.value)}
-                                                className="w-full px-3 h-full py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 transition-all font-bold text-gray-800 text-sm text-center"
-                                                min="1"
+                                                className="w-full px-3 h-11 bg-white border border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 transition-all font-bold text-blue-600 text-sm text-center"
+                                                min={existingAlbumSongs.length + 1}
                                                 placeholder="Thứ tự"
                                             />
                                         </div>

@@ -7,9 +7,15 @@ import {
     Music, 
     Calendar,
     User as UserIcon,
-    Play
+    Play,
+    VolumeX,
+    EyeOff,
+    Volume2,
+    Eye,
+    CheckCircle2,
+    Clock
 } from 'lucide-react';
-import { getAlbumsApi, deleteAlbumApi, getAlbumByIdAsync } from '../../services/api_services';
+import { getAlbumsApi, deleteAlbumApi, getAlbumByIdAsync, toggleAdminSongMuteApi, toggleAdminSongHideApi } from '../../services/api_services';
 import toast from 'react-hot-toast';
 import './Admin.css';
 
@@ -75,6 +81,55 @@ const AlbumManagement = () => {
         } catch (error) {
             toast.error("Lỗi khi xóa album");
         }
+    };
+
+    const handleToggleMute = async (songId, albumId) => {
+        try {
+            await toggleAdminSongMuteApi(songId);
+            toast.success("Trạng thái âm thanh bài hát đã thay đổi");
+            // Cập nhật state local
+            setAlbumSongs(prev => ({
+                ...prev,
+                [albumId]: prev[albumId].map(s => s.id === songId ? { ...s, isMuted: !s.isMuted } : s)
+            }));
+        } catch (error) {
+            toast.error("Lỗi thay đổi trạng thái bài hát");
+        }
+    };
+
+    const handleToggleHide = async (songId, albumId, currentStatus) => {
+        try {
+            await toggleAdminSongHideApi(songId);
+            toast.success(currentStatus === 'hidden' ? "Đã công khai bài hát!" : "Đã ẩn bài hát!");
+            // Fetch lại album songs để lấy chuẩn trạng thái (từ hidden -> scheduled/published)
+            const res = await getAlbumByIdAsync(albumId);
+            setAlbumSongs(prev => ({ ...prev, [albumId]: res.songs || [] }));
+        } catch (error) {
+            toast.error("Lỗi thay đổi hiển thị bài hát");
+        }
+    };
+
+    const getStatusBadge = (song) => {
+        if (song.trangThai === 'hidden') {
+          return (
+            <span className="flex items-center gap-1.5 px-2.5 py-1 bg-gray-100 text-gray-500 text-[11px] font-bold rounded-full border border-gray-200 uppercase tracking-wider w-fit">
+              <Clock size={12} className="rotate-180" /> Đã ẩn
+            </span>
+          );
+        }
+        const isScheduled = song.scheduledPublishDate && new Date(song.scheduledPublishDate) > new Date();
+        if (isScheduled) {
+          return (
+            <span className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 text-amber-600 text-[11px] font-bold rounded-full border border-amber-100 uppercase tracking-wider w-fit">
+              <Clock size={12} /> Hẹn giờ
+            </span>
+          );
+        }
+        return (
+          <span className="flex items-center gap-1.5 px-2.5 py-1 bg-green-50 text-green-600 text-[11px] font-bold rounded-full border border-green-100 uppercase tracking-wider w-fit">
+            <CheckCircle2 size={12} /> Công khai
+          </span>
+        );
     };
 
     return (
@@ -169,6 +224,7 @@ const AlbumManagement = () => {
                                                                         <th>Thời lượng</th>
                                                                         <th>Trạng thái</th>
                                                                         <th>Hợp tác</th>
+                                                                        <th>Thao tác</th>
                                                                     </tr>
                                                                 </thead>
                                                                 <tbody>
@@ -176,19 +232,36 @@ const AlbumManagement = () => {
                                                                         <tr key={s.id}>
                                                                             <td>{s.trackNumber || idx + 1}</td>
                                                                             <td>
-                                                                                <div className="song-title-admin">
+                                                                                <div className="song-title-admin flex items-center gap-2">
                                                                                     <Music size={14} style={{ marginRight: '8px', color: '#1ed760' }} />
-                                                                                    {s.tieuDe}
+                                                                                    <span className="font-semibold">{s.tieuDe}</span>
+                                                                                    {s.isMuted && (
+                                                                                        <span className="bg-gray-100 text-gray-400 text-[9px] px-1.5 py-0.5 rounded border border-gray-100 font-bold uppercase">
+                                                                                            Mute
+                                                                                        </span>
+                                                                                    )}
                                                                                 </div>
                                                                             </td>
                                                                             <td>{s.luotNghe?.toLocaleString()}</td>
                                                                             <td>{Math.floor(s.thoiLuongGiay / 60)}:{(s.thoiLuongGiay % 60).toString().padStart(2, '0')}</td>
                                                                             <td>
-                                                                                <span className={`badge-status ${s.trangThai}`}>
-                                                                                    {s.trangThai}
-                                                                                </span>
+                                                                                {getStatusBadge(s)}
                                                                             </td>
                                                                             <td>{s.ngheSiHopTac || '-'}</td>
+                                                                            <td>
+                                                                                <div className="action-btns">
+                                                                                    <button className="action-btn" title={s.isMuted ? "Bật âm thanh" : "Tắt âm thanh (Mute)"} onClick={() => handleToggleMute(s.id, a.id)}>
+                                                                                        {s.isMuted ? <Volume2 size={16} /> : <VolumeX size={16} />}
+                                                                                    </button>
+                                                                                    <button 
+                                                                                        onClick={() => handleToggleHide(s.id, a.id, s.trangThai)}
+                                                                                        title={s.trangThai === 'hidden' ? "Hiện" : "Ẩn"} 
+                                                                                        className={`p-2 rounded-lg transition-all ${s.trangThai === 'hidden' ? "text-green-600 hover:bg-green-50" : "text-amber-600 hover:bg-amber-50"}`}
+                                                                                    >
+                                                                                        {s.trangThai === 'hidden' ? <Eye size={16} /> : <EyeOff size={16} />}
+                                                                                    </button>
+                                                                                </div>
+                                                                            </td>
                                                                         </tr>
                                                                     ))}
                                                                 </tbody>

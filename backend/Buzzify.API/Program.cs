@@ -1,3 +1,4 @@
+using Buzzify.API.Hubs;
 using Buzzify.API.Middlewares;
 using Buzzify.Application.Interfaces;
 using Buzzify.Application.Services;
@@ -32,7 +33,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowAll",
         builder =>
         {
-            builder.WithOrigins("http://localhost:5173", "https://localhost:5173")
+            builder.WithOrigins("http://localhost:5173", "https://localhost:5173", "http://buzzify-frontend.genzo.io.vn", "https://buzzify-frontend.genzo.io.vn")
                    .AllowAnyMethod()
                    .AllowAnyHeader()
                    .AllowCredentials();
@@ -41,6 +42,7 @@ builder.Services.AddCors(options =>
 
 // Add services to the container.
 builder.Services.AddControllers();
+builder.Services.AddSignalR(); // Đăng ký SignalR cho Jam Feature
 
 // Configure Rate Limiting (DDoS Protection)
 builder.Services.AddRateLimiter(options =>
@@ -80,6 +82,7 @@ builder.Services.AddScoped<IArtistService, ArtistService>();
 builder.Services.AddScoped<IAlbumService, AlbumService>();
 builder.Services.AddScoped<ISearchService, SearchService>();
 builder.Services.AddScoped<IFileService, FileService>();
+builder.Services.AddScoped<ITheLoaiService, TheLoaiService>();
 
 // Configure JWT Authentication
 var jwtKey = builder.Configuration["Jwt:Key"] ?? "buzzify_super_secret_key_which_needs_to_be_at_least_32_characters_long";
@@ -164,6 +167,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<JamHub>("/hubs/jam"); // Cổng kết nối realtime
 
 // Seed data và cập nhật Schema
 using (var scope = app.Services.CreateScope())

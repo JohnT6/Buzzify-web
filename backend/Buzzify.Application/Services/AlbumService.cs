@@ -17,12 +17,14 @@ namespace Buzzify.Application.Services
         private readonly IAlbumRepository _albumRepository;
         private readonly IFileService _fileService;
         private readonly ISongRepository _songRepository;
+        private readonly IRepository<TheLoai> _genreRepository;
 
-        public AlbumService(IAlbumRepository albumRepository, IFileService fileService, ISongRepository songRepository)
+        public AlbumService(IAlbumRepository albumRepository, IFileService fileService, ISongRepository songRepository, IRepository<TheLoai> genreRepository)
         {
             _albumRepository = albumRepository;
             _fileService = fileService;
             _songRepository = songRepository;
+            _genreRepository = genreRepository;
         }
 
         public async Task<PagedResultDto<AlbumDto>> GetAllAlbumsAsync(string? searchTerm, string? artistId, int page, int pageSize)
@@ -36,7 +38,8 @@ namespace Buzzify.Application.Services
                 AnhBia = a.AnhBia,
                 ArtistId = a.ArtistId,
                 ArtistName = a.Artist?.Ten,
-                GenreNames = a.IdTheLoais.Select(g => g.Ten).Take(1).ToList(),
+                GenreNames = a.IdTheLoais.Select(g => g.Ten).ToList(),
+                IdTheLoais = a.IdTheLoais.Select(g => g.Id).ToList(),
                 NgayPhatHanh = a.NgayPhatHanh,
                 SongsCount = a.Songs.Count()
             }).ToList();
@@ -50,7 +53,7 @@ namespace Buzzify.Application.Services
             };
         }
 
-        public async Task<AlbumDto?> GetAlbumByIdAsync(string id, string? requestingUserId = null)
+        public async Task<AlbumDto?> GetAlbumByIdAsync(string id, string? requestingUserId = null, string? userRole = null)
         {
             var a = await _albumRepository.GetAlbumWithSongsByIdAsync(id);
             if (a == null) return null;
@@ -61,7 +64,7 @@ namespace Buzzify.Application.Services
                 isOwner = a.Artist != null && a.Artist.ProfileId == requestingUserId;
             }
 
-            var songsToReturn = isOwner 
+            var songsToReturn = (isOwner || userRole == "admin") 
                 ? a.Songs 
                 : a.Songs.Where(s => s.TrangThai == "published").ToList();
 
@@ -72,7 +75,8 @@ namespace Buzzify.Application.Services
                 AnhBia = a.AnhBia,
                 ArtistId = a.ArtistId,
                 ArtistName = a.Artist?.Ten,
-                GenreNames = a.IdTheLoais.Select(g => g.Ten).Take(1).ToList(),
+                GenreNames = a.IdTheLoais.Select(g => g.Ten).ToList(),
+                IdTheLoais = a.IdTheLoais.Select(g => g.Id).ToList(),
                 NgayPhatHanh = a.NgayPhatHanh,
                 Songs = songsToReturn.OrderBy(s => s.TrackNumber ?? 99).Select(s => new SongDto
                 {
@@ -87,7 +91,9 @@ namespace Buzzify.Application.Services
                     NgheSiHopTac = s.NgheSiHopTac,
                     TrackNumber = s.TrackNumber,
                     IdAlbum = s.IdAlbum,
-                    TenAlbum = a.TieuDe
+                    TenAlbum = a.TieuDe,
+                    TrangThai = s.TrangThai,
+                    IsMuted = s.IsMuted
                 }).ToList()
             };
         }
@@ -103,6 +109,16 @@ namespace Buzzify.Application.Services
                 NgayPhatHanh = createDto.NgayPhatHanh
             };
 
+            if (createDto.IdTheLoais != null && createDto.IdTheLoais.Any())
+            {
+                var genres = await _genreRepository.GetAllAsync();
+                var selectedGenres = genres.Where(g => createDto.IdTheLoais.Contains(g.Id)).ToList();
+                foreach (var genre in selectedGenres)
+                {
+                    newAlbum.IdTheLoais.Add(genre);
+                }
+            }
+
             await _albumRepository.AddAsync(newAlbum);
             await _albumRepository.SaveChangesAsync();
 
@@ -112,13 +128,16 @@ namespace Buzzify.Application.Services
                 TieuDe = newAlbum.TieuDe,
                 AnhBia = newAlbum.AnhBia,
                 ArtistId = newAlbum.ArtistId,
-                NgayPhatHanh = newAlbum.NgayPhatHanh
+                NgayPhatHanh = newAlbum.NgayPhatHanh,
+                GenreNames = newAlbum.IdTheLoais.Select(g => g.Ten).ToList(),
+                IdTheLoais = newAlbum.IdTheLoais.Select(g => g.Id).ToList()
             };
         }
 
         public async Task UpdateAlbumAsync(string id, CreateAlbumDto updateDto, string? artistIdToVerify = null)
         {
-            var album = await _albumRepository.GetByIdAsync(id);
+            // Để update quan hệ n-n, ta cần load album kèm theo IdTheLoais
+            var album = await _albumRepository.GetAlbumWithSongsByIdAsync(id); // Hàm này có include IdTheLoais
             if (album == null) throw new NotFoundException("Không tìm thấy album.");
 
             if (!string.IsNullOrEmpty(artistIdToVerify) && album.ArtistId != artistIdToVerify)
@@ -134,6 +153,18 @@ namespace Buzzify.Application.Services
             album.AnhBia = updateDto.AnhBia;
             album.ArtistId = updateDto.ArtistId;
             album.NgayPhatHanh = updateDto.NgayPhatHanh;
+
+            // Cập nhật thể loại
+            album.IdTheLoais.Clear();
+            if (updateDto.IdTheLoais != null && updateDto.IdTheLoais.Any())
+            {
+                var allGenres = await _genreRepository.GetAllAsync();
+                var selectedGenres = allGenres.Where(g => updateDto.IdTheLoais.Contains(g.Id)).ToList();
+                foreach (var genre in selectedGenres)
+                {
+                    album.IdTheLoais.Add(genre);
+                }
+            }
 
             await _albumRepository.SaveChangesAsync();
         }

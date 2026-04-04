@@ -24,6 +24,7 @@ namespace Buzzify.Infrastructure.Repositories
                 .Include(p => p.BaiHatTrongPlaylists)
                     .ThenInclude(bp => bp.Song)
                         .ThenInclude(s => s.IdAlbumNavigation)
+                .Include(p => p.IdTheLoais)
                 .FirstOrDefaultAsync(p => p.Id == playlistId);
         }
 
@@ -89,6 +90,7 @@ namespace Buzzify.Infrastructure.Repositories
                 .Include(p => p.IdNguoiTaoNavigation)
                 .Include(p => p.BaiHatTrongPlaylists)
                     .ThenInclude(bp => bp.Song)
+                .Include(p => p.IdTheLoais)
                 .ToListAsync();
         }
 
@@ -97,6 +99,7 @@ namespace Buzzify.Infrastructure.Repositories
             return await _context.Playlists
                 .Where(p => p.IdNguoiTao == userId && p.LoaiPlaylist == "user_created")
                 .Include(p => p.IdNguoiTaoNavigation)
+                .Include(p => p.IdTheLoais)
                 .Include(p => p.BaiHatTrongPlaylists)
                     .ThenInclude(bp => bp.Song)
                 .ToListAsync();
@@ -107,6 +110,7 @@ namespace Buzzify.Infrastructure.Repositories
             return await _context.Playlists
                 .Where(p => p.IdNguoiDungs.Any(u => u.Id == userId))
                 .Include(p => p.IdNguoiTaoNavigation)
+                .Include(p => p.IdTheLoais)
                 .Include(p => p.BaiHatTrongPlaylists)
                     .ThenInclude(bp => bp.Song)
                 .ToListAsync();

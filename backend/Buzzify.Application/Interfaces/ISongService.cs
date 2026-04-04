@@ -13,6 +13,10 @@ namespace Buzzify.Application.Interfaces
         Task<SongDto> CreateSongAsync(CreateSongDto createDto, string uploaderId);
         Task UpdateSongAsync(string id, CreateSongDto updateDto, string userId);
         Task DeleteSongAsync(string id, string userId);
-        Task IncrementPlayCountAsync(string id);
+        Task IncrementPlayCountAsync(string id, string? userId = null);
+        
+        // Admin Controls
+        Task ToggleMuteSongAsync(string id);
+        Task ToggleHideSongAsync(string id);
     }
 }

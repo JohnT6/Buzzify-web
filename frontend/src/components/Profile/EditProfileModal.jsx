@@ -65,7 +65,7 @@ const EditProfileModal = ({ isOpen, onClose, user, onUpdate }) => {
     };
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4">
             {/* Hidden File Input */}
             <input 
                 type="file" 
@@ -82,7 +82,7 @@ const EditProfileModal = ({ isOpen, onClose, user, onUpdate }) => {
             />
 
             {/* Modal Content */}
-            <div className="relative w-full max-w-[540px] bg-[#121212] rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+            <div className="relative w-full max-w-[540px] max-h-[90vh] bg-[#121212] rounded-xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in duration-300">
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-5 border-b border-white/5">
                     <h2 className="text-2xl font-black text-white tracking-tight">Chỉnh sửa hồ sơ</h2>
@@ -94,7 +94,7 @@ const EditProfileModal = ({ isOpen, onClose, user, onUpdate }) => {
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="p-6 space-y-8 max-h-[75vh] overflow-y-auto custom-main-scroll">
+                <form onSubmit={handleSubmit} className="p-6 space-y-8 flex-1 overflow-y-auto custom-main-scroll">
                     {/* Basic Info Section */}
                     <div>
                         <h3 className="text-sm font-black text-white mb-1 uppercase tracking-widest">Thông tin cơ bản</h3>

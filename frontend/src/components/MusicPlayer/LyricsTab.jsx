@@ -14,18 +14,38 @@ const LyricsTab = ({ currentSong, audioRef, isFullscreenView = false }) => {
 
     const hasSync = syncedLines.length > 0;
 
-    // ─── Animation Loop (60FPS) ───
+    // ─── Animation Loop (60FPS with Audio Extrapolation) ───
     useEffect(() => {
         let frameId;
+        let lastAudioTime = -1;
+        let lastSystemTime = 0;
+
         const loop = () => {
             if (audioRef?.current) {
-                const time = audioRef.current.currentTime;
-                setSmoothTime(time);
+                const audioTime = audioRef.current.currentTime;
+                const currentSystemTime = performance.now() / 1000;
+
+                // Cập nhật mốc thời gian khi trình duyệt update currentTime
+                if (Math.abs(audioTime - lastAudioTime) > 0.05) { 
+                    lastAudioTime = audioTime;
+                    lastSystemTime = currentSystemTime;
+                }
+
+                // Ngoại suy thời gian (Extrapolation) giữa các lần tick của trình duyệt
+                const extrapolatedTime = audioRef.current.paused 
+                    ? audioTime 
+                    : audioTime + (currentSystemTime - lastSystemTime);
+                
+                // Tránh lệch quá lớn nếu có độ trễ bất thường
+                const finalTime = Math.max(audioTime, Math.min(extrapolatedTime, audioTime + 0.3));
+
+                setSmoothTime(finalTime);
 
                 if (hasSync && syncedLines.length > 0) {
                     let idx = -1;
+                    // Tối ưu vòng lặp bằng cách duyệt ngược hoặc tìm kiếm nhị phân, nhưng duyệt thường với mảng nhỏ vẫn ổn
                     for (let i = 0; i < syncedLines.length; i++) {
-                        if (time >= syncedLines[i].time) idx = i;
+                        if (finalTime >= syncedLines[i].time) idx = i;
                         else break;
                     }
                     setActiveIndex(current => current !== idx ? idx : current);

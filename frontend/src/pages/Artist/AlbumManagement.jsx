@@ -133,17 +133,24 @@ const AlbumManagement = () => {
                 <h3 className="font-bold text-gray-800 line-clamp-1 group-hover:text-blue-600 transition-colors uppercase tracking-tight text-sm">
                   {album.tieuDe}
                 </h3>
-                <div className="flex items-center gap-3 text-gray-400">
-                   <div className="flex items-center gap-1 text-[11px] font-bold">
-                     <Disc size={12} />
-                     <span>{album.songsCount || 0} bài hát</span>
-                   </div>
-                   <div className="w-1 h-1 bg-gray-300 rounded-full"></div>
-                   <div className="flex items-center gap-1 text-[11px] font-bold">
-                     <Calendar size={12} />
-                     <span>{new Date(album.ngayPhatHanh).getFullYear()}</span>
-                   </div>
-                </div>
+                 <div className="flex flex-wrap gap-1.5 mt-1">
+                    {album.genreNames && album.genreNames.map((genre, idx) => (
+                      <span key={idx} className="px-2 py-0.5 bg-gray-100 text-gray-500 rounded text-[9px] font-bold uppercase tracking-wider">
+                        {genre}
+                      </span>
+                    ))}
+                 </div>
+                 <div className="flex items-center gap-3 text-gray-400 mt-2">
+                    <div className="flex items-center gap-1 text-[11px] font-bold">
+                      <Disc size={12} />
+                      <span>{album.songsCount || 0} bài hát</span>
+                    </div>
+                    <div className="w-1 h-1 bg-gray-300 rounded-full"></div>
+                    <div className="flex items-center gap-1 text-[11px] font-bold">
+                      <Calendar size={12} />
+                      <span>{new Date(album.ngayPhatHanh).getFullYear()}</span>
+                    </div>
+                 </div>
               </div>
 
               {album.scheduledPublishDate && new Date(album.scheduledPublishDate) > new Date() && (

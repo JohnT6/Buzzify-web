@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Trash2, Edit3, UserPlus, Shield, User as UserIcon, Mic2 } from 'lucide-react';
-import { getAdminUsersApi, deleteAdminUserApi, updateAdminUserRoleApi } from '../../services/api_services';
+import { Search, Trash2, Edit3, UserPlus, Shield, User as UserIcon, Mic2, Lock, Unlock } from 'lucide-react';
+import { getAdminUsersApi, deleteAdminUserApi, updateAdminUserRoleApi, toggleAdminUserLockApi } from '../../services/api_services';
 import toast from 'react-hot-toast';
 import './Admin.css';
 
@@ -45,6 +45,16 @@ const UserManagement = () => {
         }
     };
 
+    const handleToggleLock = async (id) => {
+        try {
+            await toggleAdminUserLockApi(id);
+            toast.success("Trạng thái khóa người dùng đã thay đổi");
+            fetchUsers();
+        } catch (error) {
+            toast.error("Lỗi khi thay đổi trạng thái khóa");
+        }
+    };
+
     const filteredUsers = users.filter(u => 
         u.hoTen?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         u.email?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -79,6 +89,7 @@ const UserManagement = () => {
                                 <th>Người dùng</th>
                                 <th>Email</th>
                                 <th>Vai trò</th>
+                                <th>Trạng thái</th>
                                 <th>Ngày đăng ký</th>
                                 <th>Thao tác</th>
                             </tr>
@@ -112,11 +123,19 @@ const UserManagement = () => {
                                             </select>
                                         </div>
                                     </td>
+                                    <td>
+                                        <span className={`badge-role ${u.isLocked ? 'user' : 'admin'}`}>
+                                            {u.isLocked ? 'Bị khóa' : 'Hoạt động'}
+                                        </span>
+                                    </td>
                                     <td>{new Date(u.createdDate || Date.now()).toLocaleDateString('vi-VN')}</td>
                                     <td>
                                         <div className="action-btns">
                                             <button className="action-btn" onClick={() => handleChangeRole(u.id, u.vaiTro === 'admin' ? 'user' : 'admin')}>
                                                 <Shield size={16} />
+                                            </button>
+                                            <button className="action-btn" onClick={() => handleToggleLock(u.id)} title={u.isLocked ? "Mở khóa" : "Khóa"}>
+                                                {u.isLocked ? <Unlock size={16} /> : <Lock size={16} />}
                                             </button>
                                             <button className="action-btn delete" onClick={() => handleDeleteUser(u.id)}>
                                                 <Trash2 size={16} />

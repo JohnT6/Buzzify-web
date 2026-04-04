@@ -13,6 +13,10 @@ namespace Buzzify.Application.Interfaces
         Task DeleteArtistAsync(string id);
         Task<ArtistDto?> GetArtistByProfileIdAsync(string profileId);
         
+        // Admin Controls
+        Task ToggleVerifyArtistAsync(string artistId);
+        Task UpdateArtistInfoAdminAsync(string artistId, UpdateArtistAdminDto dto);
+        
         // Follow logic
         Task FollowArtistAsync(string userId, string artistId);
         Task UnfollowArtistAsync(string userId, string artistId);

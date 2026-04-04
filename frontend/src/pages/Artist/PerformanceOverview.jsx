@@ -35,18 +35,28 @@ const PerformanceOverview = () => {
   const [range, setRange] = useState('28d');
 
   useEffect(() => {
-    const fetchStats = async () => {
-      setLoading(true);
+    let intervalId;
+
+    const fetchStats = async (isInitial = false) => {
+      if (isInitial) setLoading(true);
       try {
         const response = await getArtistStatsApi(range);
         setStats(response.data || response);
       } catch (error) {
         console.error("Error fetching stats:", error);
       } finally {
-        setLoading(false);
+        if (isInitial) setLoading(false);
       }
     };
-    fetchStats();
+
+    fetchStats(true);
+
+    // Auto-refresh mỗi 15 giây để realtime dữ liệu
+    intervalId = setInterval(() => {
+      fetchStats(false);
+    }, 15000);
+
+    return () => clearInterval(intervalId);
   }, [range]);
 
   const cards = [

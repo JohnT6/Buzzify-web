@@ -15,11 +15,13 @@ namespace Buzzify.Application.Services
     {
         private readonly IPlaylistRepository _playlistRepository;
         private readonly IFileService _fileService;
+        private readonly IRepository<TheLoai> _theLoaiRepository;
 
-        public PlaylistService(IPlaylistRepository playlistRepository, IFileService fileService)
+        public PlaylistService(IPlaylistRepository playlistRepository, IFileService fileService, IRepository<TheLoai> theLoaiRepository)
         {
             _playlistRepository = playlistRepository;
             _fileService = fileService;
+            _theLoaiRepository = theLoaiRepository;
         }
 
         public async Task<IEnumerable<PlaylistDto>> GetAllPlaylistsAsync()
@@ -35,6 +37,8 @@ namespace Buzzify.Application.Services
                 IdNguoiTao = p.IdNguoiTao,
                 LoaiPlaylist = p.LoaiPlaylist,
                 CreatorName = p.IdNguoiTaoNavigation?.HoTen,
+                IsSystem = p.IsSystem,
+                IsFeatured = p.IsFeatured,
                 SongCount = p.BaiHatTrongPlaylists.Count(),
                 TopSongImages = p.BaiHatTrongPlaylists.Select(bp => bp.Song.AnhBia).Where(a => !string.IsNullOrEmpty(a)).Take(4).ToList()
             });
@@ -55,7 +59,11 @@ namespace Buzzify.Application.Services
                 IdNguoiTao = p.IdNguoiTao,
                 LoaiPlaylist = p.LoaiPlaylist,
                 CreatorName = p.IdNguoiTaoNavigation?.HoTen,
+                IsSystem = p.IsSystem,
+                IsFeatured = p.IsFeatured,
                 TopSongImages = p.BaiHatTrongPlaylists.Select(bp => bp.Song.AnhBia).Where(a => !string.IsNullOrEmpty(a)).Take(4).ToList(),
+                Genres = p.IdTheLoais.Select(t => t.Ten).ToList(),
+                GenreIds = p.IdTheLoais.Select(t => t.Id).ToList(),
                 SongCount = p.BaiHatTrongPlaylists.Count(bp => bp.Song.TrangThai == "published"),
                 Songs = p.BaiHatTrongPlaylists.Where(bp => bp.Song.TrangThai == "published").Select(bp => new SongDto
                 {
@@ -161,6 +169,156 @@ namespace Buzzify.Application.Services
 
             _playlistRepository.Remove(p);
             await _playlistRepository.SaveChangesAsync();
+        }
+
+        public async Task ToggleFeaturedPlaylistAsync(string id)
+        {
+            var p = await _playlistRepository.GetByIdAsync(id);
+            if (p == null) throw new NotFoundException("Không tìm thấy danh sách phát.");
+
+            p.IsFeatured = !p.IsFeatured;
+            _playlistRepository.Update(p);
+            await _playlistRepository.SaveChangesAsync();
+        }
+
+        public async Task DeletePlaylistAdminAsync(string id)
+        {
+            var p = await _playlistRepository.GetByIdAsync(id);
+            if (p == null) throw new NotFoundException("Không tìm thấy danh sách phát.");
+
+            if (!string.IsNullOrEmpty(p.AnhBia)) _fileService.DeleteFile(p.AnhBia);
+
+            _playlistRepository.Remove(p);
+            await _playlistRepository.SaveChangesAsync();
+        }
+
+        public async Task<IEnumerable<PlaylistDto>> GetAdminPlaylistsAsync()
+        {
+            var playlists = await _playlistRepository.GetAllWithSongsAsync();
+            
+            // Admin chỉ quản lý playlist User tạo hoặc System Mix, không quản lý "Bài hát đã thích" riêng tư
+            return playlists
+                .Where(p => p.LoaiPlaylist != "liked_songs")
+                .Select(p => new PlaylistDto
+                {
+                    Id = p.Id,
+                    Ten = p.Ten,
+                    MoTa = p.MoTa,
+                    AnhBia = p.AnhBia,
+                    CongKhai = p.CongKhai,
+                    IdNguoiTao = p.IdNguoiTao,
+                    LoaiPlaylist = p.LoaiPlaylist,
+                    CreatorName = p.IdNguoiTaoNavigation?.HoTen,
+                    IsSystem = p.IsSystem,
+                    IsFeatured = p.IsFeatured,
+                    SongCount = p.BaiHatTrongPlaylists.Count(),
+                    Genres = p.IdTheLoais.Select(t => t.Ten).ToList(),
+                    GenreIds = p.IdTheLoais.Select(t => t.Id).ToList(),
+                    Songs = p.BaiHatTrongPlaylists.Select(bp => new SongDto {
+                        Id = bp.Song.Id,
+                        TieuDe = bp.Song.TieuDe,
+                        AnhBia = bp.Song.AnhBia,
+                        TenNgheSi = bp.Song.Artist?.Ten ?? bp.Song.NgheSiHopTac
+                    }).ToList()
+                }).OrderByDescending(p => p.IsSystem).ThenByDescending(p => p.IsFeatured);
+        }
+
+        public async Task<PlaylistDto> CreateAdminPlaylistAsync(CreatePlaylistDto createDto, string creatorId)
+        {
+            string? imagePath = null;
+            if (!string.IsNullOrEmpty(createDto.AnhBia))
+            {
+                if (createDto.AnhBia.StartsWith("data:image"))
+                {
+                    imagePath = await _fileService.SaveFileFromBase64Async(createDto.AnhBia, "images/playlists");
+                }
+                else
+                {
+                    imagePath = createDto.AnhBia; // Giữ nguyên URL nếu không phải base64
+                }
+            }
+
+            var newPlaylist = new Playlist
+            {
+                Id = Guid.NewGuid().ToString(),
+                Ten = createDto.Ten,
+                MoTa = createDto.MoTa,
+                AnhBia = imagePath,
+                CongKhai = createDto.CongKhai ?? true,
+                IdNguoiTao = creatorId,
+                LoaiPlaylist = createDto.IsSystem ? "system_mix" : "admin_created",
+                IsSystem = createDto.IsSystem,
+                IsFeatured = false
+            };
+
+            if (createDto.IdTheLoais != null && createDto.IdTheLoais.Any())
+            {
+                foreach (var genreId in createDto.IdTheLoais)
+                {
+                    var genre = await _theLoaiRepository.GetByIdAsync(genreId);
+                    if (genre != null) newPlaylist.IdTheLoais.Add(genre);
+                }
+            }
+
+            await _playlistRepository.AddAsync(newPlaylist);
+            await _playlistRepository.SaveChangesAsync();
+
+            return await GetPlaylistByIdAsync(newPlaylist.Id);
+        }
+
+        public async Task UpdateAdminPlaylistAsync(string id, CreatePlaylistDto updateDto)
+        {
+            var p = await _playlistRepository.GetPlaylistWithSongsAsync(id);
+            if (p == null) throw new NotFoundException("Không tìm thấy danh sách phát.");
+
+            p.Ten = updateDto.Ten;
+            p.MoTa = updateDto.MoTa;
+            if (updateDto.CongKhai.HasValue) p.CongKhai = updateDto.CongKhai.Value;
+
+            // Xử lý ảnh bìa tương tự như UpdatePlaylistAsync hoặc dùng trực tiếp file URL từ Admin
+            if (updateDto.AnhBia != null)
+            {
+                if (string.IsNullOrEmpty(updateDto.AnhBia))
+                {
+                    if (!string.IsNullOrEmpty(p.AnhBia)) _fileService.DeleteFile(p.AnhBia);
+                    p.AnhBia = null;
+                }
+                else if (updateDto.AnhBia.StartsWith("data:image"))
+                {
+                    if (!string.IsNullOrEmpty(p.AnhBia)) _fileService.DeleteFile(p.AnhBia);
+                    p.AnhBia = await _fileService.SaveFileFromBase64Async(updateDto.AnhBia, "images/playlists");
+                }
+                else
+                {
+                    // Giữ nguyên hoặc cập nhật URL
+                    p.AnhBia = updateDto.AnhBia;
+                }
+            }
+
+            // Cập nhật thể loại
+            if (updateDto.IdTheLoais != null)
+            {
+                p.IdTheLoais.Clear();
+                foreach (var gid in updateDto.IdTheLoais)
+                {
+                    var genre = await _theLoaiRepository.GetByIdAsync(gid);
+                    if (genre != null) p.IdTheLoais.Add(genre);
+                }
+            }
+
+            _playlistRepository.Update(p);
+            await _playlistRepository.SaveChangesAsync();
+        }
+
+        public async Task AddSongToAdminPlaylistAsync(string playlistId, string songId)
+        {
+            // Không kiểm tra quyền sở hữu, cho phép Admin thêm bài hát vào bất kỳ playlist nào
+            await _playlistRepository.AddSongAsync(playlistId, songId);
+        }
+
+        public async Task RemoveSongFromAdminPlaylistAsync(string playlistId, string songId)
+        {
+            await _playlistRepository.RemoveSongAsync(playlistId, songId);
         }
 
         public async Task AddSongToPlaylistAsync(string playlistId, string songId, string userId)

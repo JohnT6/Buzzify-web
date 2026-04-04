@@ -46,6 +46,13 @@ namespace Buzzify.API.Controllers.Admin
             await _userService.DeleteUserAsync(id);
             return Ok(new { message = "User deleted successfully." });
         }
+
+        [HttpPut("{id}/ToggleLock")]
+        public async Task<IActionResult> ToggleUserLock(string id)
+        {
+            await _userService.ToggleUserLockAsync(id);
+            return Ok(new { message = "User lock status toggled successfully." });
+        }
     }
 
     public class UpdateRoleDto

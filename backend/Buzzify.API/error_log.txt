@@ -2,6 +2,211 @@ Using launch settings from D:\project_WebNangCao\backend\Buzzify.API\Properties\
 Building...
 D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj : warning NU1903: Package 'AutoMapper' 16.1.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-rvv3-g6hj-g44x [D:\project_WebNangCao\backend\Buzzify.API\Buzzify.API.csproj]
 D:\project_WebNangCao\backend\Buzzify.Application\Buzzify.Application.csproj : warning NU1903: Package 'AutoMapper' 16.1.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-rvv3-g6hj-g44x
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (28ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      
+                    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[songs]') AND name = 'scheduled_publish_date')
+                    BEGIN
+                        ALTER TABLE [dbo].[songs] ADD [scheduled_publish_date] DATETIME NULL;
+                    END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (6ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      
+                    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[album]') AND name = 'scheduled_publish_date')
+                    BEGIN
+                        ALTER TABLE [dbo].[album] ADD [scheduled_publish_date] DATETIME NULL;
+                    END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (6ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      
+                    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[artists]') AND name = 'follower_count')
+                    BEGIN
+                        ALTER TABLE [dbo].[artists] ADD [follower_count] INT DEFAULT 0 NOT NULL;
+                    END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (5ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      
+                    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[profiles]') AND name = 'is_locked')
+                    BEGIN
+                        ALTER TABLE [dbo].[profiles] ADD [is_locked] BIT DEFAULT 0 NOT NULL;
+                    END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (6ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      
+                    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[artists]') AND name = 'is_verified')
+                    BEGIN
+                        ALTER TABLE [dbo].[artists] ADD [is_verified] BIT DEFAULT 0 NOT NULL;
+                    END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (5ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      
+                    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[artists]') AND name = 'bio')
+                    BEGIN
+                        ALTER TABLE [dbo].[artists] ADD [bio] NVARCHAR(MAX) NULL;
+                    END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (6ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      
+                    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[artists]') AND name = 'cover_image')
+                    BEGIN
+                        ALTER TABLE [dbo].[artists] ADD [cover_image] NVARCHAR(MAX) NULL;
+                    END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (7ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      
+                    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[playlists]') AND name = 'is_system')
+                    BEGIN
+                        ALTER TABLE [dbo].[playlists] ADD [is_system] BIT DEFAULT 0 NOT NULL;
+                    END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (7ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      
+                    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[playlists]') AND name = 'is_featured')
+                    BEGIN
+                        ALTER TABLE [dbo].[playlists] ADD [is_featured] BIT DEFAULT 0 NOT NULL;
+                    END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (5ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      
+                    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[songs]') AND name = 'is_muted')
+                    BEGIN
+                        ALTER TABLE [dbo].[songs] ADD [is_muted] BIT DEFAULT 0 NOT NULL;
+                    END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (11ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT [a].[id], [a].[anh_dai_dien], [a].[bio], [a].[cover_image], [a].[follower_count], [a].[is_verified], [a].[profile_id], [a].[ten]
+      FROM [artists] AS [a]
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (8ms) [Parameters=[@__artist_ProfileId_0='?' (Size = 36)], CommandType='Text', CommandTimeout='30']
+      SELECT CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM [profiles] AS [p]
+              WHERE [p].[id] = @__artist_ProfileId_0) THEN CAST(1 AS bit)
+          ELSE CAST(0 AS bit)
+      END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__artist_ProfileId_0='?' (Size = 36)], CommandType='Text', CommandTimeout='30']
+      SELECT CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM [profiles] AS [p]
+              WHERE [p].[id] = @__artist_ProfileId_0) THEN CAST(1 AS bit)
+          ELSE CAST(0 AS bit)
+      END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__artist_ProfileId_0='?' (Size = 36)], CommandType='Text', CommandTimeout='30']
+      SELECT CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM [profiles] AS [p]
+              WHERE [p].[id] = @__artist_ProfileId_0) THEN CAST(1 AS bit)
+          ELSE CAST(0 AS bit)
+      END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__artist_ProfileId_0='?' (Size = 36)], CommandType='Text', CommandTimeout='30']
+      SELECT CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM [profiles] AS [p]
+              WHERE [p].[id] = @__artist_ProfileId_0) THEN CAST(1 AS bit)
+          ELSE CAST(0 AS bit)
+      END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__artist_ProfileId_0='?' (Size = 36)], CommandType='Text', CommandTimeout='30']
+      SELECT CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM [profiles] AS [p]
+              WHERE [p].[id] = @__artist_ProfileId_0) THEN CAST(1 AS bit)
+          ELSE CAST(0 AS bit)
+      END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__artist_ProfileId_0='?' (Size = 36)], CommandType='Text', CommandTimeout='30']
+      SELECT CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM [profiles] AS [p]
+              WHERE [p].[id] = @__artist_ProfileId_0) THEN CAST(1 AS bit)
+          ELSE CAST(0 AS bit)
+      END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__artist_ProfileId_0='?' (Size = 36)], CommandType='Text', CommandTimeout='30']
+      SELECT CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM [profiles] AS [p]
+              WHERE [p].[id] = @__artist_ProfileId_0) THEN CAST(1 AS bit)
+          ELSE CAST(0 AS bit)
+      END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__artist_ProfileId_0='?' (Size = 36)], CommandType='Text', CommandTimeout='30']
+      SELECT CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM [profiles] AS [p]
+              WHERE [p].[id] = @__artist_ProfileId_0) THEN CAST(1 AS bit)
+          ELSE CAST(0 AS bit)
+      END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__artist_ProfileId_0='?' (Size = 36)], CommandType='Text', CommandTimeout='30']
+      SELECT CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM [profiles] AS [p]
+              WHERE [p].[id] = @__artist_ProfileId_0) THEN CAST(1 AS bit)
+          ELSE CAST(0 AS bit)
+      END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      UPDATE [dbo].[songs] SET [trang_thai] = 'published' WHERE [trang_thai] IS NULL OR [trang_thai] = ''
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT [s].[id], [s].[anh_bia], [s].[artist_id], [s].[id_album], [s].[is_muted], [s].[luot_nghe], [s].[ngay_tai_len], [s].[nghe_si_hop_tac], [s].[scheduled_publish_date], [s].[thoi_luong_giay], [s].[tieu_de], [s].[track_number], [s].[trang_thai], [s].[uploader_id], [s].[url]
+      FROM [songs] AS [s]
+      WHERE [s].[id_album] IS NULL OR [s].[id_album] LIKE N''
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@__recentCheck_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM [lich_su_nghe] AS [l]
+              WHERE [l].[ngay_nghe] >= @__recentCheck_0) THEN CAST(1 AS bit)
+          ELSE CAST(0 AS bit)
+      END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@__adminEmail_0='?' (Size = 255)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [p].[id], [p].[anh_dai_dien], [p].[anh_dai_dien_provider], [p].[bio], [p].[email], [p].[ho_ten], [p].[is_email_verified], [p].[is_locked], [p].[last_position], [p].[last_queue_ids], [p].[last_song_id], [p].[last_source_info], [p].[link], [p].[password_hash], [p].[provider], [p].[provider_id], [p].[vai_tro], [p].[verification_code_expiry], [p].[verification_code_hash]
+      FROM [profiles] AS [p]
+      WHERE [p].[email] = @__adminEmail_0
+[Seeder] Updated Admin password and provider for: admin@buzzify.com
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@__artistEmail_0='?' (Size = 255)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [p].[id], [p].[anh_dai_dien], [p].[anh_dai_dien_provider], [p].[bio], [p].[email], [p].[ho_ten], [p].[is_email_verified], [p].[is_locked], [p].[last_position], [p].[last_queue_ids], [p].[last_song_id], [p].[last_source_info], [p].[link], [p].[password_hash], [p].[provider], [p].[provider_id], [p].[vai_tro], [p].[verification_code_expiry], [p].[verification_code_hash]
+      FROM [profiles] AS [p]
+      WHERE [p].[email] = @__artistEmail_0
+[Seeder] Updated Artist profile for: charlieputh@buzzify.com
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [a].[id], [a].[anh_dai_dien], [a].[bio], [a].[cover_image], [a].[follower_count], [a].[is_verified], [a].[profile_id], [a].[ten]
+      FROM [artists] AS [a]
+      WHERE [a].[ten] = N'Charlie Puth'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (9ms) [Parameters=[@p7='?' (Size = 36), @p0='?' (Size = 4000), @p1='?' (Size = 4000), @p2='?' (Size = 4000), @p3='?' (DbType = Int32), @p4='?' (DbType = Boolean), @p5='?' (Size = 36), @p6='?' (Size = 255), @p26='?' (Size = 36), @p8='?' (Size = 4000), @p9='?' (Size = 4000), @p10='?' (Size = 4000), @p11='?' (Size = 255), @p12='?' (Size = 255), @p13='?' (DbType = Boolean), @p14='?' (DbType = Boolean), @p15='?' (DbType = Double), @p16='?' (Size = 4000), @p17='?' (Size = 36), @p18='?' (Size = 4000), @p19='?' (Size = 4000), @p20='?' (Size = 255), @p21='?' (Size = 50), @p22='?' (Size = 255), @p23='?' (Size = 50), @p24='?' (DbType = DateTime), @p25='?' (Size = 255), @p45='?' (Size = 36), @p27='?' (Size = 4000), @p28='?' (Size = 4000), @p29='?' (Size = 4000), @p30='?' (Size = 255), @p31='?' (Size = 255), @p32='?' (DbType = Boolean), @p33='?' (DbType = Boolean), @p34='?' (DbType = Double), @p35='?' (Size = 4000), @p36='?' (Size = 36), @p37='?' (Size = 4000), @p38='?' (Size = 4000), @p39='?' (Size = 255), @p40='?' (Size = 50), @p41='?' (Size = 255), @p42='?' (Size = 50), @p43='?' (DbType = DateTime), @p44='?' (Size = 255)], CommandType='Text', CommandTimeout='30']
+      SET NOCOUNT ON;
+      UPDATE [artists] SET [anh_dai_dien] = @p0, [bio] = @p1, [cover_image] = @p2, [follower_count] = @p3, [is_verified] = @p4, [profile_id] = @p5, [ten] = @p6
+      OUTPUT 1
+      WHERE [id] = @p7;
+      UPDATE [profiles] SET [anh_dai_dien] = @p8, [anh_dai_dien_provider] = @p9, [bio] = @p10, [email] = @p11, [ho_ten] = @p12, [is_email_verified] = @p13, [is_locked] = @p14, [last_position] = @p15, [last_queue_ids] = @p16, [last_song_id] = @p17, [last_source_info] = @p18, [link] = @p19, [password_hash] = @p20, [provider] = @p21, [provider_id] = @p22, [vai_tro] = @p23, [verification_code_expiry] = @p24, [verification_code_hash] = @p25
+      OUTPUT 1
+      WHERE [id] = @p26;
+      UPDATE [profiles] SET [anh_dai_dien] = @p27, [anh_dai_dien_provider] = @p28, [bio] = @p29, [email] = @p30, [ho_ten] = @p31, [is_email_verified] = @p32, [is_locked] = @p33, [last_position] = @p34, [last_queue_ids] = @p35, [last_song_id] = @p36, [last_source_info] = @p37, [link] = @p38, [password_hash] = @p39, [provider] = @p40, [provider_id] = @p41, [vai_tro] = @p42, [verification_code_expiry] = @p43, [verification_code_hash] = @p44
+      OUTPUT 1
+      WHERE [id] = @p45;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (8ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      UPDATE [dbo].[playlists] SET [is_system] = 1 WHERE [loai_playlist] IN ('editorial', 'system_mix', 'top_charts') OR [id_nguoi_tao] IN (SELECT [id] FROM [dbo].[profiles] WHERE [vai_tro] = 'admin')
+[Seeder] Marked 7 playlists as System.
 fail: Microsoft.Extensions.Hosting.Internal.Host[11]
       Hosting failed to start
       System.IO.IOException: Failed to bind to address http://127.0.0.1:5090: address already in use.
@@ -56,4 +261,5 @@ Unhandled exception. System.IO.IOException: Failed to bind to address http://127
    at Microsoft.Extensions.Hosting.HostingAbstractionsHostExtensions.RunAsync(IHost host, CancellationToken token)
    at Microsoft.Extensions.Hosting.HostingAbstractionsHostExtensions.RunAsync(IHost host, CancellationToken token)
    at Microsoft.Extensions.Hosting.HostingAbstractionsHostExtensions.Run(IHost host)
-   at Program.<Main>$(String[] args) in D:\project_WebNangCao\backend\Buzzify.API\Program.cs:line 161
+   at Program.<Main>$(String[] args) in D:\project_WebNangCao\backend\Buzzify.API\Program.cs:line 179
+   at Program.<Main>(String[] args)

@@ -12,6 +12,7 @@ namespace Buzzify.Application.DTOs.User
         public string? Bio { get; set; }
         public string? Link { get; set; }
         public string? AnhDaiDienProvider { get; set; }
+        public bool IsLocked { get; set; }
         public PlaybackStateDto? PlaybackState { get; set; }
     }
 }

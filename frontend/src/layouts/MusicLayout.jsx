@@ -14,6 +14,9 @@ import MusicPlayerBar from '../components/MusicPlayer/MusicPlayerBar';
 import SearchDropdown from '../components/Search/SearchDropdown';
 import { useMusic } from '../context/MusicContext';
 import CreatePlaylistModal from '../components/Playlist/CreatePlaylistModal';
+import JamPanel from '../components/MusicPlayer/JamPanel';
+import PlaylistMenu from '../components/Playlist/PlaylistMenu';
+import BottomNav from './BottomNav';
 
 const ACCENT = '#0F5E8F';
 
@@ -71,6 +74,17 @@ const UserMenu = ({ user, onLogout }) => {
                             <LayoutDashboard size={14} /> Kênh nghệ sĩ
                         </button>
                     )}
+                    {user?.vaiTro === 'admin' && (
+                        <button 
+                            onClick={() => {
+                                setIsOpen(false);
+                                navigate('/admin');
+                            }}
+                            className="w-full text-left px-4 py-2.5 text-sm font-medium flex items-center gap-2 hover:bg-white/10 hover:text-white transition-colors text-indigo-400 border-b border-white/5 pb-3 mb-1"
+                        >
+                            <LayoutDashboard size={14} /> Trang quản trị
+                        </button>
+                    )}
                     {['Hồ sơ', 'Cài đặt', 'Trợ giúp'].map(label => (
                         <button 
                             key={label} 
@@ -111,6 +125,17 @@ const MusicLayout = () => {
     const searchRef = useRef(null);
     const [showDropdown, setShowDropdown] = useState(false);
     const [isCreatePlaylistModalOpen, setIsCreatePlaylistModalOpen] = useState(false);
+    const [playlistMenuConfig, setPlaylistMenuConfig] = useState({ open: false, x: 0, y: 0, playlist: null });
+
+    const handlePlaylistContextMenu = (e, playlist) => {
+        e.preventDefault();
+        setPlaylistMenuConfig({
+            open: true,
+            x: e.clientX,
+            y: e.clientY,
+            playlist: playlist
+        });
+    };
 
     const handleLogout = async () => {
         try { await logoutApi(); } catch {}
@@ -180,8 +205,8 @@ const MusicLayout = () => {
     return (
         <div className="flex h-screen text-white overflow-hidden" style={{ background: '#0e0e0e', fontFamily: "'Inter', -apple-system, sans-serif" }}>
             
-            {/* Sidebar */}
-            <aside className="w-56 flex-shrink-0 flex flex-col overflow-hidden" style={{ background: '#0a0a0a', borderRight: '1px solid rgba(255,255,255,0.05)' }}>
+            {/* Sidebar - Hidden on Mobile */}
+            <aside className="w-56 flex-shrink-0 flex flex-col overflow-hidden hidden md:flex" style={{ background: '#0a0a0a', borderRight: '1px solid rgba(255,255,255,0.05)' }}>
                 <Logo />
                 <nav className="px-3 space-y-0.5 flex-shrink-0">
                     {navItems.map(item => (
@@ -226,6 +251,7 @@ const MusicLayout = () => {
                             myPlaylists.filter(p => !p.ten?.toLowerCase().includes('thích')).map(pl => (
                                 <button key={pl.id} 
                                     onClick={() => navigate(`/home/playlist/${pl.id}`)}
+                                    onContextMenu={(e) => handlePlaylistContextMenu(e, pl)}
                                     className="w-full flex items-center gap-3 p-2 rounded-xl group hover:bg-white/5 transition-all text-left">
                                     <div className="w-10 h-10 rounded bg-[#1a1a1a] flex-shrink-0 overflow-hidden border border-white/5 group-hover:border-white/10 transition-colors">
                                         {pl.anhBia ? (
@@ -264,10 +290,14 @@ const MusicLayout = () => {
             </aside>
 
             {/* Main area */}
-            <div className={`flex-1 flex flex-col overflow-hidden ${currentSong ? 'pb-24' : ''}`}>
-                <header className="flex-shrink-0 flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', background: '#0a0a0a' }}>
+            <div className={`flex-1 flex flex-col overflow-hidden`}>
+                <header className="flex-shrink-0 flex items-center justify-between px-4 md:px-6 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', background: '#0a0a0a' }}>
                     <div className="flex gap-4">
-                        <div className="flex gap-2">
+                        {/* Mobile Logo */}
+                        <div className="md:hidden flex items-center" onClick={() => navigate('/home')}>
+                            <img src="/logo/FullLogo_Transparent.png" alt="buzzify" className="h-7 w-auto object-contain" />
+                        </div>
+                        <div className="hidden md:flex gap-2">
                             <button onClick={() => window.history.back()} className="w-8 h-8 rounded-full flex items-center justify-center bg-white/5 text-gray-500 hover:text-white transition-colors">
                                 <ChevronLeft size={18} />
                             </button>
@@ -277,8 +307,8 @@ const MusicLayout = () => {
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-4 flex-1 justify-end pr-4">
-                        <div className="relative" ref={searchRef}>
+                    <div className="flex items-center gap-4 flex-1 justify-end pr-0 md:pr-4">
+                        <div className="relative hidden md:block" ref={searchRef}>
                             <div className={`flex items-center gap-3 px-4 py-1.5 rounded-full transition-all duration-300 bg-white/5 border ${isSearchFocused ? 'w-[400px] border-white/40 bg-white/10' : 'w-72 border-white/10 hover:border-white/20'}`}>
                                 <Search size={16} className={`transition-colors ${isSearchFocused ? 'text-white' : 'text-white/40'}`} />
                                 <input 
@@ -324,10 +354,13 @@ const MusicLayout = () => {
                     </div>
                 </header>
 
-                <main className="flex-1 overflow-hidden relative flex flex-col">
-                    <Outlet context={{ user, setUser }} />
+                <main className={`flex-1 overflow-hidden relative flex flex-col ${currentSong ? 'pb-36 md:pb-24' : 'pb-20 md:pb-0'}`}>
+                    <Outlet context={{ user, setUser, handlePlaylistContextMenu }} />
                 </main>
             </div>
+
+            {/* Bottom Navigation for Mobile */}
+            <BottomNav />
 
             {isCreatePlaylistModalOpen && (
                 <CreatePlaylistModal 
@@ -336,7 +369,20 @@ const MusicLayout = () => {
                 />
             )}
 
+            {/* Jam Panel - Rendered under MusicPlayerBar */}
+            <JamPanel />
+
+            {/* Music Player Bar - Fixed at the very bottom */}
             <MusicPlayerBar />
+
+            {/* Playlist Context Menu */}
+            {playlistMenuConfig.open && (
+                <PlaylistMenu 
+                    playlist={playlistMenuConfig.playlist}
+                    position={{ x: playlistMenuConfig.x, y: playlistMenuConfig.y }}
+                    onClose={() => setPlaylistMenuConfig({ ...playlistMenuConfig, open: false })}
+                />
+            )}
         </div>
     );
 };

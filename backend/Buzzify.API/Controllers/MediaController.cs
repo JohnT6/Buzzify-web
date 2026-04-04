@@ -19,20 +19,51 @@ namespace Buzzify.API.Controllers
 
         [Authorize]
         [HttpPost("upload")]
-        public async Task<IActionResult> Upload(IFormFile file, [FromQuery] string type = "other")
+        public async Task<IActionResult> Upload(
+            IFormFile file, 
+            [FromQuery] string type = "other",
+            [FromQuery] string? artistId = null,
+            [FromQuery] string? albumId = null,
+            [FromQuery] string? resourceId = null)
         {
             if (file == null || file.Length == 0) return BadRequest("No file uploaded.");
 
-            // Mapping folder dựa trên type
-            var folder = "images/others";
-            if (type == "audio") folder = "audio";
-            else if (type == "album") folder = "images/albums";
-            else if (type == "song") folder = "images/songs";
-            else if (type == "user") folder = "images/profiles";
-            else if (type == "playlist") folder = "images/playlists";
-            else if (type == "image") folder = "images/others";
+            var folder = "others";
+            var subFolder = "";
 
-            var url = await _fileService.SaveFileAsync(file, folder);
+            if (type == "audio")
+            {
+                folder = "audio";
+                // audio/{artistId}/{albumId hoặc 'singles'}
+                subFolder = $"{artistId ?? "unknown"}/{albumId ?? "singles"}";
+            }
+            else if (type == "album")
+            {
+                folder = "images/albums";
+                // images/albums/{artistId}
+                subFolder = artistId ?? "others";
+            }
+            else if (type == "song")
+            {
+                folder = "images/songs";
+                // images/songs/{artistId}
+                subFolder = artistId ?? "others";
+            }
+            else if (type == "user")
+            {
+                folder = "images/profiles";
+            }
+            else if (type == "playlist")
+            {
+                folder = "images/playlists";
+            }
+            else if (type == "image")
+            {
+                folder = "images/others";
+            }
+
+            // resourceId được dùng làm tên file nếu có
+            var url = await _fileService.SaveFileAsync(file, folder, subFolder, resourceId);
             return Ok(new { url });
         }
     }

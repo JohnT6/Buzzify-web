@@ -12,6 +12,7 @@ namespace Buzzify.Application.DTOs.Album
         public string? ArtistId { get; set; }
         public string? ArtistName { get; set; }
         public List<string> GenreNames { get; set; } = new();
+        public List<string> IdTheLoais { get; set; } = new();
         public DateOnly? NgayPhatHanh { get; set; }
         public int SongsCount { get; set; }
         public List<SongDto> Songs { get; set; } = new();

@@ -10,6 +10,23 @@ import ForgotPassword from './pages/Auth/ForgotPassword';
 import VerifyEmail from './pages/Auth/VerifyEmail';
 
 import MusicHome from './pages/Home/MusicHome';
+import { useParams } from 'react-router-dom';
+
+const JamJoiner = () => {
+    const { id } = useParams();
+    const { joinJamSession } = useMusic();
+
+    useEffect(() => {
+        if (id) {
+            // Slight delay to ensure context is fully mounted/ready
+            setTimeout(() => {
+                joinJamSession(id);
+            }, 500);
+        }
+    }, [id]);
+
+    return <Navigate to="/home" />;
+};
 
 const ProtectedRoute = ({ children }) => {
   const token = Cookies.get('access_token');
@@ -45,6 +62,9 @@ import AdminDashboard from './pages/Admin/AdminDashboard';
 import UserManagement from './pages/Admin/UserManagement';
 import ArtistManagement from './pages/Admin/ArtistManagement';
 import AdminAlbumManagement from './pages/Admin/AlbumManagement';
+import PlaylistManagement from './pages/Admin/PlaylistManagement';
+
+import ConfirmJamActionModal from './components/MusicPlayer/ConfirmJamActionModal';
 
 const ArtistRoute = ({ children }) => {
   const token = Cookies.get('access_token');
@@ -92,6 +112,7 @@ function App() {
     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
       <Toaster position="top-right" reverseOrder={false} />
       <MusicProvider>
+        <ConfirmJamActionModal />
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<PublicRoute><LandingPage /></PublicRoute>} />
@@ -111,6 +132,9 @@ function App() {
               <Route path="search" element={<SearchView />} />
             </Route>
 
+            {/* Jam Share Link Route */}
+            <Route path="/jam/:id" element={<ProtectedRoute><JamJoiner /></ProtectedRoute>} />
+
             {/* Artist Dashboard Routes */}
             <Route path="/artist" element={<ArtistRoute><ArtistLayout /></ArtistRoute>}>
               <Route index element={<PerformanceOverview />} />
@@ -125,6 +149,7 @@ function App() {
               <Route path="users" element={<UserManagement />} />
               <Route path="artists" element={<ArtistManagement />} />
               <Route path="albums" element={<AdminAlbumManagement />} />
+              <Route path="playlists" element={<PlaylistManagement />} />
             </Route>
             
             <Route path="*" element={<Navigate to="/" />} />

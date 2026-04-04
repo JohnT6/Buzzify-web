@@ -22,6 +22,12 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
+      '/hubs': {
+        target: 'http://localhost:5090',
+        ws: true,
+        changeOrigin: true,
+        secure: false,
+      },
       '/images': {
         target: 'http://localhost:5090',
         changeOrigin: true,

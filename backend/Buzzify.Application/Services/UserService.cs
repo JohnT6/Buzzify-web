@@ -38,6 +38,7 @@ namespace Buzzify.Application.Services
                 Bio = u.Bio,
                 Link = u.Link,
                 AnhDaiDienProvider = u.AnhDaiDienProvider,
+                IsLocked = u.IsLocked,
                 PlaybackState = new PlaybackStateDto
                 {
                     LastSongId = u.LastSongId,
@@ -65,6 +66,7 @@ namespace Buzzify.Application.Services
                 Bio = u.Bio,
                 Link = u.Link,
                 AnhDaiDienProvider = u.AnhDaiDienProvider,
+                IsLocked = u.IsLocked,
                 PlaybackState = new PlaybackStateDto
                 {
                     LastSongId = u.LastSongId,
@@ -139,6 +141,16 @@ namespace Buzzify.Application.Services
             }
 
             _profileRepository.Remove(user);
+            await _profileRepository.SaveChangesAsync();
+        }
+
+        public async Task ToggleUserLockAsync(string id)
+        {
+            var user = await _profileRepository.GetByIdAsync(id);
+            if (user == null) throw new NotFoundException("Không tìm thấy người dùng.");
+            
+            user.IsLocked = !user.IsLocked;
+            _profileRepository.Update(user);
             await _profileRepository.SaveChangesAsync();
         }
         

@@ -50,7 +50,7 @@ namespace Buzzify.Infrastructure.Repositories
 
         public async Task<Album?> GetAlbumWithSongsByIdAsync(string id)
         {
-            return await _dbSet.AsNoTracking()
+            return await _dbSet
                 .Include(a => a.Artist)
                 .Include(a => a.IdTheLoais)
                 .Include(a => a.Songs)

@@ -21,20 +21,28 @@ const AdminDashboard = () => {
     });
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        fetchStats();
-    }, []);
-
-    const fetchStats = async () => {
+    const fetchStats = React.useCallback(async (isInitial = false) => {
+        if (isInitial) setLoading(true);
         try {
             const res = await getAdminStatsOverviewApi();
             setStats(res);
         } catch (error) {
-            toast.error("Không thể tải thống kê");
+            if (isInitial) toast.error("Không thể tải thống kê");
         } finally {
-            setLoading(false);
+            if (isInitial) setLoading(false);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        let intervalId;
+        fetchStats(true);
+
+        intervalId = setInterval(() => {
+            fetchStats(false);
+        }, 15000);
+
+        return () => clearInterval(intervalId);
+    }, [fetchStats]);
 
     if (loading) return <div className="admin-loading">Đang tải dữ liệu...</div>;
 

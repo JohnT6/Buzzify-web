@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Trash2, ExternalLink, Mic2, Star, CheckCircle } from 'lucide-react';
-import { getAdminArtistsApi, deleteAdminArtistApi } from '../../services/api_services';
+import { Search, Trash2, ExternalLink, Mic2, Star, CheckCircle, Edit3, X, Image } from 'lucide-react';
+import { getAdminArtistsApi, deleteAdminArtistApi, toggleAdminArtistVerifyApi, updateAdminArtistInfoApi } from '../../services/api_services';
 import toast from 'react-hot-toast';
 import './Admin.css';
 
@@ -8,6 +8,8 @@ const ArtistManagement = () => {
     const [artists, setArtists] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [editingArtist, setEditingArtist] = useState(null);
+    const [editForm, setEditForm] = useState({ bio: '', coverImage: '', isVerified: false });
 
     useEffect(() => {
         fetchArtists();
@@ -35,9 +37,40 @@ const ArtistManagement = () => {
         }
     };
 
+    const handleToggleVerify = async (id) => {
+        try {
+            await toggleAdminArtistVerifyApi(id);
+            toast.success("Trạng thái xác minh đã thay đổi");
+            fetchArtists();
+        } catch (error) {
+            toast.error("Lỗi thay đổi trạng thái");
+        }
+    };
+
+    const handleEditClick = (artist) => {
+        setEditingArtist(artist);
+        setEditForm({
+            bio: artist.bio || '',
+            coverImage: artist.coverImage || '',
+            isVerified: artist.isVerified || false
+        });
+    };
+
+    const handleSaveEdit = async () => {
+        if (!editingArtist) return;
+        try {
+            await updateAdminArtistInfoApi(editingArtist.id, editForm);
+            toast.success("Cập nhật thông tin thành công");
+            setEditingArtist(null);
+            fetchArtists();
+        } catch (error) {
+            toast.error("Lỗi khi cập nhật thông tin");
+        }
+    };
+
     const filteredArtists = artists.filter(a => 
         a.ten?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        a.tieuSu?.toLowerCase().includes(searchTerm.toLowerCase())
+        a.bio?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     return (
@@ -87,7 +120,7 @@ const ArtistManagement = () => {
                                     </td>
                                     <td>
                                         <div className="cell-sub" style={{ maxWidth: '300px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                            {a.tieuSu || 'Chưa có tiểu sử'}
+                                            {a.bio || 'Chưa có tiểu sử'}
                                         </div>
                                     </td>
                                     <td>
@@ -97,15 +130,18 @@ const ArtistManagement = () => {
                                         </div>
                                     </td>
                                     <td>
-                                        <span className="badge-role artist">
-                                            <CheckCircle size={12} style={{ marginRight: '4px' }} />
-                                            Verified
+                                        <span onClick={() => handleToggleVerify(a.id)} className={`badge-role ${a.isVerified ? 'artist' : 'user'}`} style={{ cursor: 'pointer' }} title="Click để thay đổi">
+                                            {a.isVerified && <CheckCircle size={12} style={{ marginRight: '4px' }} />}
+                                            {a.isVerified ? 'Verified' : 'Chưa xác minh'}
                                         </span>
                                     </td>
                                     <td>
                                         <div className="action-btns">
                                             <button className="action-btn" title="Xem trang cá nhân" onClick={() => window.open(`/home/artist/${a.id}`, '_blank')}>
                                                 <ExternalLink size={16} />
+                                            </button>
+                                            <button className="action-btn" title="Chỉnh sửa thông tin" onClick={() => handleEditClick(a)}>
+                                                <Edit3 size={16} />
                                             </button>
                                             <button className="action-btn delete" onClick={() => handleDeleteArtist(a.id)}>
                                                 <Trash2 size={16} />
@@ -118,6 +154,41 @@ const ArtistManagement = () => {
                     </table>
                 )}
             </div>
+
+            {/* Modal chỉnh sửa nghệ sĩ */}
+            {editingArtist && (
+                <div className="admin-modal-overlay" onClick={() => setEditingArtist(null)}>
+                    <div className="admin-modal" onClick={e => e.stopPropagation()}>
+                        <div className="admin-modal-header">
+                            <h2>Sửa thông tin nghệ sĩ</h2>
+                            <button className="close-btn" onClick={() => setEditingArtist(null)}>
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <div className="admin-modal-body form-group-list">
+                            <div className="form-group">
+                                <label>Tiểu sử (Bio)</label>
+                                <textarea rows="3" placeholder="Nhập tiểu sử..." value={editForm.bio} onChange={(e) => setEditForm({...editForm, bio: e.target.value})} />
+                            </div>
+                            <div className="form-group">
+                                <label>Ảnh bìa (URL)</label>
+                                <div className="input-with-icon">
+                                    <Image size={18} className="input-icon" />
+                                    <input type="text" placeholder="https://..." value={editForm.coverImage} onChange={(e) => setEditForm({...editForm, coverImage: e.target.value})} />
+                                </div>
+                            </div>
+                            <div className="form-group row-checkbox">
+                                <input type="checkbox" id="verify-check" checked={editForm.isVerified} onChange={(e) => setEditForm({...editForm, isVerified: e.target.checked})} />
+                                <label htmlFor="verify-check">Tích xanh xác minh (Verified)</label>
+                            </div>
+                        </div>
+                        <div className="admin-modal-footer">
+                            <button className="btn-cancel" onClick={() => setEditingArtist(null)}>Hủy</button>
+                            <button className="btn-save" onClick={handleSaveEdit}>Lưu thay đổi</button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

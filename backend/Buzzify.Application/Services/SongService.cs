@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 
 namespace Buzzify.Application.Services
 {
@@ -50,7 +51,8 @@ namespace Buzzify.Application.Services
                 IdAlbum = s.IdAlbum,
                 NgayPhatHanh = s.IdAlbumNavigation?.NgayPhatHanh,
                 ScheduledPublishDate = s.ScheduledPublishDate,
-                TrackNumber = s.TrackNumber
+                TrackNumber = s.TrackNumber,
+                IsMuted = s.IsMuted
             });
 
             return new PagedResultDto<SongDto>
@@ -83,7 +85,8 @@ namespace Buzzify.Application.Services
                 IdAlbum = s.IdAlbum,
                 NgayPhatHanh = s.IdAlbumNavigation?.NgayPhatHanh,
                 ScheduledPublishDate = s.ScheduledPublishDate,
-                TrackNumber = s.TrackNumber
+                TrackNumber = s.TrackNumber,
+                IsMuted = s.IsMuted
             });
 
             return new PagedResultDto<SongDto>
@@ -118,7 +121,8 @@ namespace Buzzify.Application.Services
                 IdAlbum = s.IdAlbum,
                 NgayPhatHanh = s.IdAlbumNavigation?.NgayPhatHanh,
                 ScheduledPublishDate = s.ScheduledPublishDate,
-                TrackNumber = s.TrackNumber
+                TrackNumber = s.TrackNumber,
+                IsMuted = s.IsMuted
             };
         }
 
@@ -187,7 +191,8 @@ namespace Buzzify.Application.Services
                 ScheduledPublishDate = newSong.ScheduledPublishDate,
                 LuotNghe = newSong.LuotNghe,
                 IdAlbum = newSong.IdAlbum,
-                TrackNumber = newSong.TrackNumber
+                TrackNumber = newSong.TrackNumber,
+                IsMuted = newSong.IsMuted
             };
         }
 
@@ -254,17 +259,58 @@ namespace Buzzify.Application.Services
             _songRepository.Remove(song);
             await _songRepository.SaveChangesAsync();
         }
-        public async Task IncrementPlayCountAsync(string id)
+        public async Task IncrementPlayCountAsync(string id, string? userId = null)
         {
-            var song = await _songRepository.GetByIdAsync(id);
+            var song = await _songRepository.GetAll().Include(s => s.LichSuNghes).FirstOrDefaultAsync(s => s.Id == id);
             if (song != null)
             {
                 song.LuotNghe++;
+                
+                if (!string.IsNullOrEmpty(userId))
+                {
+                    song.LichSuNghes.Add(new LichSuNghe
+                    {
+                        IdNguoiDung = userId,
+                        SongId = song.Id,
+                        NgayNghe = DateTime.Now
+                    });
+                }
+
                 song.Artist = null;
                 song.IdAlbumNavigation = null;
                 _songRepository.Update(song);
                 await _songRepository.SaveChangesAsync();
             }
+        }
+
+        public async Task ToggleMuteSongAsync(string id)
+        {
+            var song = await _songRepository.GetByIdAsync(id);
+            if (song == null) throw new NotFoundException("Không tìm thấy bài hát.");
+
+            song.IsMuted = !song.IsMuted;
+            _songRepository.Update(song);
+            await _songRepository.SaveChangesAsync();
+        }
+
+        public async Task ToggleHideSongAsync(string id)
+        {
+            var song = await _songRepository.GetByIdAsync(id);
+            if (song == null) throw new NotFoundException("Không tìm thấy bài hát.");
+
+            if (song.TrangThai == "hidden")
+            {
+                // Unhide -> Trở về published hoặc scheduled phụ thuộc vào thời gian
+                song.TrangThai = (song.ScheduledPublishDate.HasValue && song.ScheduledPublishDate.Value > DateTime.Now) 
+                    ? "scheduled" : "published";
+            }
+            else
+            {
+                song.TrangThai = "hidden";
+            }
+            
+            _songRepository.Update(song);
+            await _songRepository.SaveChangesAsync();
         }
     }
 }

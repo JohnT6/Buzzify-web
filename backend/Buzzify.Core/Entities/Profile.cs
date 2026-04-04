@@ -53,4 +53,7 @@ public partial class Profile
     public string? Bio { get; set; }
     public string? Link { get; set; }
     public string? AnhDaiDienProvider { get; set; }
+
+    // Admin Controls
+    public bool IsLocked { get; set; } = false;
 }

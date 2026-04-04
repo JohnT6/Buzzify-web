@@ -122,6 +122,16 @@ public partial class BuzzifyDbContext : DbContext
                 .HasDefaultValue(0)
                 .HasColumnName("follower_count");
 
+            entity.Property(e => e.IsVerified)
+                .HasDefaultValue(false)
+                .HasColumnName("is_verified");
+
+            entity.Property(e => e.Bio)
+                .HasColumnName("bio");
+
+            entity.Property(e => e.CoverImage)
+                .HasColumnName("cover_image");
+
             entity.HasOne(d => d.Profile).WithMany(p => p.Artists)
                 .HasForeignKey(d => d.ProfileId)
                 .OnDelete(DeleteBehavior.SetNull)
@@ -252,6 +262,14 @@ public partial class BuzzifyDbContext : DbContext
                 .HasMaxLength(255)
                 .HasColumnName("ten");
 
+            entity.Property(e => e.IsSystem)
+                .HasDefaultValue(false)
+                .HasColumnName("is_system");
+
+            entity.Property(e => e.IsFeatured)
+                .HasDefaultValue(false)
+                .HasColumnName("is_featured");
+
             entity.HasOne(d => d.IdNguoiTaoNavigation).WithMany(p => p.Playlists)
                 .HasForeignKey(d => d.IdNguoiTao)
                 .HasConstraintName("FK__playlists__id_ng__75A278F5");
@@ -333,6 +351,10 @@ public partial class BuzzifyDbContext : DbContext
                 .HasColumnName("link");
             entity.Property(e => e.AnhDaiDienProvider)
                 .HasColumnName("anh_dai_dien_provider");
+
+            entity.Property(e => e.IsLocked)
+                .HasDefaultValue(false)
+                .HasColumnName("is_locked");
 
             entity.HasMany(d => d.ArtistsNavigation).WithMany(p => p.IdNguoiDungs)
                 .UsingEntity<Dictionary<string, object>>(
@@ -439,6 +461,10 @@ public partial class BuzzifyDbContext : DbContext
                 .HasColumnName("uploader_id");
             entity.Property(e => e.Url).HasColumnName("url");
             entity.Property(e => e.ScheduledPublishDate).HasColumnName("scheduled_publish_date");
+
+            entity.Property(e => e.IsMuted)
+                .HasDefaultValue(false)
+                .HasColumnName("is_muted");
 
             entity.HasOne(d => d.Artist).WithMany(p => p.Songs)
                 .HasForeignKey(d => d.ArtistId)

@@ -101,7 +101,7 @@ const ProfileView = () => {
                 {/* Global Overlays for seamless blending */}
                 {/* 1. Horizontal gradient: Darker on sides, clear in middle */}
                 <div className="absolute inset-0 z-[1] bg-gradient-to-r from-[#0e0e0e]/60 via-transparent to-[#0e0e0e]/60" />
-                
+
                 {/* 2. Bottom gradient for text readability */}
                 <div className="absolute inset-x-0 bottom-0 h-2/3 z-[2] bg-gradient-to-t from-[#0e0e0e] via-[#0e0e0e]/40 to-transparent" />
 
@@ -197,7 +197,7 @@ const ProfileView = () => {
 
                 {isLoading && (
                     <section>
-                         <div className="flex items-center justify-between mb-12">
+                        <div className="flex items-center justify-between mb-12">
                             <div className="h-8 bg-white/5 rounded w-48 animate-pulse" />
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-8">
@@ -233,7 +233,7 @@ const ProfileView = () => {
                 userName={user?.hoTen}
             />
 
-            <EditProfileModal 
+            <EditProfileModal
                 isOpen={isEditModalOpen}
                 onClose={() => setIsEditModalOpen(false)}
                 user={user}

@@ -8,18 +8,23 @@ import {
   AlertCircle,
   Plus
 } from 'lucide-react';
-import { uploadMediaApi, createAlbumApi, updateAlbumApi } from '../../services/api_services';
+import { uploadMediaApi, createAlbumApi, updateAlbumApi, getMyArtistProfileApi, getGenresApi } from '../../services/api_services';
 import { cn } from '../../lib/utils';
 import { toast } from 'react-hot-toast';
+import DateTimePicker from '../../components/Common/DateTimePicker';
 
 const AlbumModal = ({ isOpen, onClose, onSuccess, editData = null }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [artistInfo, setArtistInfo] = useState(null);
   
   const [formData, setFormData] = useState({
     tieuDe: '',
     ngayPhatHanh: '',
+    idTheLoais: []
   });
+
+  const [genres, setGenres] = useState([]);
 
   const [files, setFiles] = useState({
     cover: null
@@ -30,10 +35,25 @@ const AlbumModal = ({ isOpen, onClose, onSuccess, editData = null }) => {
   });
 
   useEffect(() => {
+    const fetchArtistAndGenres = async () => {
+        try {
+            const [artistRes, genreRes] = await Promise.all([
+                getMyArtistProfileApi(),
+                getGenresApi()
+            ]);
+            if (artistRes) setArtistInfo(artistRes);
+            if (genreRes && genreRes.data) setGenres(genreRes.data);
+            else if (Array.isArray(genreRes)) setGenres(genreRes);
+        } catch (err) {}
+    };
+    if (isOpen) fetchArtistAndGenres();
+
     if (editData) {
+      console.log("Album edit data:", editData);
       setFormData({
         tieuDe: editData.tieuDe || '',
-        ngayPhatHanh: editData.ngayPhatHanh || '',
+        ngayPhatHanh: editData.ngayPhatHanh ? new Date(editData.ngayPhatHanh) : new Date(),
+        idTheLoais: editData.idTheLoais || []
       });
       setPreviews({
         cover: editData.anhBia || null
@@ -42,12 +62,24 @@ const AlbumModal = ({ isOpen, onClose, onSuccess, editData = null }) => {
     } else {
       setFormData({
         tieuDe: '',
-        ngayPhatHanh: new Date().toISOString().split('T')[0],
+        ngayPhatHanh: new Date(),
+        idTheLoais: []
       });
       setPreviews({ cover: null });
       setFiles({ cover: null });
     }
   }, [editData, isOpen]);
+
+  const handleGenreToggle = (genreId) => {
+    setFormData(prev => {
+        const current = prev.idTheLoais || [];
+        if (current.includes(genreId)) {
+            return { ...prev, idTheLoais: current.filter(id => id !== genreId) };
+        } else {
+            return { ...prev, idTheLoais: [...current, genreId] };
+        }
+    });
+  };
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -70,19 +102,24 @@ const AlbumModal = ({ isOpen, onClose, onSuccess, editData = null }) => {
     setError('');
 
     try {
+      const artistId = artistInfo?.id || 'unknown';
+      const albumResourceId = editData?.id || crypto.randomUUID();
+
       let coverUrl = editData?.anhBia || '';
       if (files.cover) {
         const coverFormData = new FormData();
         coverFormData.append('file', files.cover);
-        const coverRes = await uploadMediaApi('album', coverFormData);
+        // Lưu theo cấu trúc images/albums/{artistId}/{albumResourceId}.jpg
+        const coverRes = await uploadMediaApi('album', coverFormData, artistId, null, albumResourceId);
         coverUrl = coverRes.url || coverRes.data?.url;
       }
 
       const albumData = {
         TieuDe: formData.tieuDe,
         AnhBia: coverUrl,
-        NgayPhatHanh: formData.ngayPhatHanh || null,
-        ArtistId: editData?.artistId || null
+        NgayPhatHanh: formData.ngayPhatHanh instanceof Date ? formData.ngayPhatHanh.toISOString() : formData.ngayPhatHanh,
+        ArtistId: editData?.artistId || null,
+        IdTheLoais: formData.idTheLoais
       };
 
       if (editData) {
@@ -122,7 +159,7 @@ const AlbumModal = ({ isOpen, onClose, onSuccess, editData = null }) => {
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-8 space-y-6">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-8 space-y-6 custom-scrollbar">
           {error && (
             <div className="p-4 bg-red-50 text-red-600 rounded-2xl flex items-center gap-3 text-sm border border-red-100 animate-shake">
               <AlertCircle size={20} />
@@ -166,14 +203,32 @@ const AlbumModal = ({ isOpen, onClose, onSuccess, editData = null }) => {
 
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Ngày phát hành</label>
-                <div className="relative">
-                  <CalendarIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                  <input 
-                    type="date" 
-                    value={formData.ngayPhatHanh}
-                    onChange={(e) => setFormData({...formData, ngayPhatHanh: e.target.value})}
-                    className="w-full pl-11 pr-4 py-3 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500/20 transition-all font-medium text-gray-800"
-                  />
+                <DateTimePicker 
+                  selected={formData.ngayPhatHanh}
+                  onChange={(date) => setFormData({...formData, ngayPhatHanh: date})}
+                  placeholderText="Chọn ngày phát hành"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Thể loại (Chọn từ danh sách)</label>
+                <div className="flex flex-wrap gap-2 py-1">
+                    {genres.map((genre) => (
+                        <button
+                            key={genre.id}
+                            type="button"
+                            onClick={() => handleGenreToggle(genre.id)}
+                            className={cn(
+                                "px-3 py-1.5 rounded-full text-xs font-bold transition-all border",
+                                (formData.idTheLoais || []).includes(genre.id)
+                                    ? "bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-500/20"
+                                    : "bg-white border-gray-200 text-gray-500 hover:border-blue-400 hover:text-blue-600"
+                            )}
+                        >
+                            {genre.ten}
+                        </button>
+                    ))}
+                    {genres.length === 0 && <p className="text-xs text-gray-400 italic">Đang tải thể loại...</p>}
                 </div>
               </div>
             </div>

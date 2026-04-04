@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Cookies from 'js-cookie';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useOutletContext } from 'react-router-dom';
 import {
     LogOut, Search, Home as HomeIcon, LayoutGrid, Heart, Library,
     ChevronLeft, ChevronRight, Play, MoreHorizontal, Music2, Lock, ArrowUp
@@ -31,8 +31,8 @@ const fmt = (s) => {
 const AlbumCard = ({ album, onClick }) => {
     const navigate = useNavigate();
     return (
-        <div className="flex-shrink-0 w-44 group cursor-pointer transition-all" onClick={() => onClick(album)}>
-            <div className="relative w-44 h-44 rounded-md overflow-hidden mb-2.5 bg-gray-800">
+        <div className="flex-shrink-0 w-36 md:w-44 group cursor-pointer transition-all" onClick={() => onClick(album)}>
+            <div className="relative w-36 h-36 md:w-44 md:h-44 rounded-md overflow-hidden mb-2.5 bg-gray-800">
                 <ImgFallback src={album.anhBia} alt={album.tieuDe} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
                     <div className="w-12 h-12 rounded-full bg-black/50 hover:scale-105 transition-transform flex items-center justify-center backdrop-blur-sm">
@@ -61,8 +61,8 @@ const SongCard = ({ song, onPlay }) => {
     const cover = song.anhBia;
 
     return (
-        <div className="flex-shrink-0 w-44 group cursor-pointer transition-all" onClick={() => onPlay(song)}>
-            <div className="relative w-44 h-44 rounded-md overflow-hidden mb-2.5 bg-gray-800">
+        <div className="flex-shrink-0 w-36 md:w-44 group cursor-pointer transition-all" onClick={() => onPlay(song)}>
+            <div className="relative w-36 h-36 md:w-44 md:h-44 rounded-md overflow-hidden mb-2.5 bg-gray-800">
                 <ImgFallback src={cover} alt={song.tieuDe} className="w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
                     <div className="w-12 h-12 rounded-full bg-black/50 hover:scale-105 transition-transform flex items-center justify-center backdrop-blur-sm">
@@ -110,9 +110,14 @@ const MixCard = ({ playlist, onClick }) => {
         }
     };
 
+    const { handlePlaylistContextMenu } = useOutletContext();
+
     return (
-        <div className="flex-shrink-0 w-48 group cursor-pointer transition-all" onClick={() => onClick(playlist)}>
-            <div className="relative w-48 h-48 rounded-md overflow-hidden mb-3 bg-gray-800">
+        <div className="flex-shrink-0 w-40 md:w-48 group cursor-pointer transition-all" 
+            onClick={() => onClick(playlist)}
+            onContextMenu={(e) => handlePlaylistContextMenu(e, playlist)}
+        >
+            <div className="relative w-40 h-40 md:w-48 md:h-48 rounded-md overflow-hidden mb-3 bg-gray-800">
                 <ImgFallback src={playlist.anhBia} alt={playlist.ten} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all opacity-0 group-hover:opacity-100">
                     <div className="absolute bottom-3 left-3 w-10 h-10 rounded-full bg-white hover:scale-105 transition-transform flex items-center justify-center shadow-lg">
@@ -319,7 +324,7 @@ const BannerSlider = ({ items, onPlay }) => {
     const displayGenres = allGenres.length > 0 ? allGenres : GENRES;
 
     return (
-        <div className="relative rounded-2xl overflow-hidden h-[450px] mb-10 bg-[#0f0f0f] flex group border border-white/5 shadow-2xl">
+        <div className="relative rounded-2xl overflow-hidden h-[300px] md:h-[450px] mb-10 bg-[#0f0f0f] flex group border border-white/5 shadow-2xl">
             {/* Full Background Image */}
             <div className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 ease-out group-hover:scale-[1.03]"
                 style={{ backgroundImage: `url(${imgUrl(currentItem.anhBia) || 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=1200&q=80'})` }} />
@@ -327,8 +332,8 @@ const BannerSlider = ({ items, onPlay }) => {
             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
 
             <div className="relative z-10 w-full h-full">
-                {/* Bottom Left: Sidebar Genres (Nhỏ lại) */}
-                <div className="absolute bottom-10 left-10 flex flex-col gap-1.5 focus:outline-none">
+                {/* Bottom Left: Sidebar Genres (Hidden on Mobile) */}
+                <div className="absolute bottom-10 left-10 hidden md:flex flex-col gap-1.5 focus:outline-none">
                     {displayGenres.map((g, i) => {
                         // Nhấn vào thể loại sẽ tìm album đầu tiên có thể loại đó
                         const targetIndex = items.findIndex(item => item.genreNames?.includes(g));
@@ -348,14 +353,14 @@ const BannerSlider = ({ items, onPlay }) => {
                 </div>
 
                 {/* Bottom Right: Banner Area */}
-                <div className="absolute bottom-10 right-10 flex flex-col items-end text-right max-w-xl">
+                <div className="absolute bottom-6 left-6 right-6 md:bottom-10 md:right-10 md:left-auto flex flex-col items-center md:items-end text-center md:text-right max-w-xl">
                     <h2 
                         onClick={() => navigate(`/home/album/${currentItem.id}`)}
-                        className="text-4xl md:text-5xl font-extrabold text-white mb-1 tracking-tight drop-shadow-2xl truncate w-full cursor-pointer hover:underline"
+                        className="text-2xl md:text-5xl font-extrabold text-white mb-1 tracking-tight drop-shadow-2xl truncate w-full cursor-pointer hover:underline"
                     >
                         {currentItem.tieuDe || 'Album'}
                     </h2>
-                    <p className="text-lg text-gray-300 mb-6 font-medium drop-shadow-md">{currentItem.artistName || 'Nghệ sĩ'}</p>
+                    <p className="text-sm md:text-lg text-gray-300 mb-4 md:mb-6 font-medium drop-shadow-md">{currentItem.artistName || 'Nghệ sĩ'}</p>
 
                     <div className="flex items-center gap-5">
                         <button className="text-gray-300 hover:text-white transition-colors cursor-pointer active:scale-95">
@@ -440,7 +445,7 @@ const MusicHome = () => {
         <div className="flex-1 flex min-h-0 overflow-hidden">
 
             {/* Scrollable main */}
-            <div className="flex-1 overflow-y-auto hide-scrollbar px-8 py-6 h-full custom-main-scroll" data-lenis-prevent>
+            <div className="flex-1 overflow-y-auto hide-scrollbar px-4 md:px-8 py-6 h-full custom-main-scroll" data-lenis-prevent>
 
                 {/* Banner Slider */}
                 <BannerSlider items={albums.length > 0 ? albums : songs.slice(0, 6)} onPlay={handlePlay} />
@@ -508,8 +513,8 @@ const MusicHome = () => {
                 )}
             </div>
 
-            {/* Right Column */}
-            <div className="flex-shrink-0 overflow-y-auto px-4 py-5 hide-scrollbar h-full" style={{ width: '320px', background: '#0a0a0a', borderLeft: '1px solid rgba(255,255,255,0.05)' }} data-lenis-prevent>
+            {/* Right Column - Hidden on Mobile */}
+            <div className="hidden md:flex flex-shrink-0 flex-col overflow-y-auto px-4 py-5 hide-scrollbar h-full" style={{ width: '320px', background: '#0a0a0a', borderLeft: '1px solid rgba(255,255,255,0.05)' }} data-lenis-prevent>
 
                 {/* Top Streams */}
                 <div className="mb-8">

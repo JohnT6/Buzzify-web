@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
     Play, Pause, SkipBack, SkipForward, Repeat, Shuffle,
-    Volume2, VolumeX, ListMusic, ChevronUp, Heart, MoreHorizontal,
-    Maximize2, Minimize2, Search, CircleOff, X, Mic2
+    Volume2, VolumeX, ListMusic, ChevronUp, ChevronDown, Heart, MoreHorizontal,
+    Maximize2, Minimize2, Search, CircleOff, X, Mic2, Users
 } from 'lucide-react';
 import LyricsTab from './LyricsTab';
 import { useMusic } from '../../context/MusicContext';
@@ -24,7 +24,9 @@ const MusicPlayerBar = () => {
         currentSong, isPlaying, togglePlay, nextSong, prevSong,
         likedSongIds, toggleLike, volume, setVolume, audioRef,
         sourceInfo, queue, currentIndex, playSong, playFromQueue,
-        isShuffle, setIsShuffle, repeatMode, setRepeatMode
+        isShuffle, setIsShuffle, repeatMode, setRepeatMode,
+        isJamPanelOpen, setIsJamPanelOpen, dominantColor,
+        isJamActive
     } = useMusic();
 
     const [progress, setProgress] = useState(0);
@@ -32,7 +34,6 @@ const MusicPlayerBar = () => {
     const [duration, setDuration] = useState(0);
     const [isMuted, setIsMuted] = useState(false);
     const [prevVolume, setPrevVolume] = useState(volume);
-    const [bgColor, setBgColor] = useState('#1a1a1a');
     const [isExpanded, setIsExpanded] = useState(false);
     const [isClosing, setIsClosing] = useState(false);
     const [activeTab, setActiveTab] = useState('Play queue');
@@ -66,55 +67,6 @@ const MusicPlayerBar = () => {
         audio.addEventListener('timeupdate', updateProgress);
         audio.addEventListener('loadedmetadata', updateProgress);
 
-        // Extract color from cover (Muted/Premium Dark logic)
-        if (currentSong?.anhBia) {
-            const img = new Image();
-            img.crossOrigin = "Anonymous";
-            img.src = imgUrl(currentSong.anhBia);
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                // Downscale for performance
-                canvas.width = 50; 
-                canvas.height = 50;
-                ctx.drawImage(img, 0, 0, 50, 50);
-                const data = ctx.getImageData(0, 0, 50, 50).data;
-                
-                let r = 0, g = 0, b = 0, count = 0;
-                for (let i = 0; i < data.length; i += 20) { // Sample every 5th pixel
-                    const pr = data[i], pg = data[i+1], pb = data[i+2];
-                    
-                    // Simple Lightness check: (max+min)/2 approx
-                    const max = Math.max(pr, pg, pb);
-                    const min = Math.min(pr, pg, pb);
-                    const l = (max + min) / 2 / 255;
-
-                    // Chỉ lấy các pixel có độ sáng vừa phải (trầm): 15% < L < 60%
-                    if (l > 0.15 && l < 0.6) {
-                        r += pr; g += pg; b += pb;
-                        count++;
-                    }
-                }
-
-                if (count > 0) {
-                    let fr = Math.floor(r / count);
-                    let fg = Math.floor(g / count);
-                    let fb = Math.floor(b / count);
-                    
-                    // Làm tối thêm một chút nếu vẫn hơi sáng
-                    const finalL = (Math.max(fr, fg, fb) + Math.min(fr, fg, fb)) / 2 / 255;
-                    if (finalL > 0.4) {
-                        fr = Math.floor(fr * 0.7);
-                        fg = Math.floor(fg * 0.7);
-                        fb = Math.floor(fb * 0.7);
-                    }
-                    
-                    setBgColor(`rgb(${fr}, ${fg}, ${fb})`);
-                } else {
-                    setBgColor('#1a1a1a'); // Fallback
-                }
-            };
-        }
 
         return () => {
             audio.removeEventListener('timeupdate', updateProgress);
@@ -236,28 +188,36 @@ const MusicPlayerBar = () => {
     const nextUp = queue.length > 0 ? queue.slice(currentIndex + 1, currentIndex + 6) : [];
 
     return (
-        <div className={`fixed bottom-0 left-0 right-0 z-[500]`}>
+        <div className={`fixed bottom-0 left-0 right-0 z-[500] md:bottom-0 ${isExpanded ? 'inset-0' : 'bottom-[72px] md:bottom-0'}`}>
             {/* Expanded Modal Layer */}
             {(isExpanded || isClosing) && (
-                <div className={`fixed inset-0 z-[550] flex flex-col ${isClosing ? 'animate-slide-down' : 'animate-slide-up'}`}
+                <div className={`fixed inset-y-0 left-0 ${isJamPanelOpen ? 'right-0 md:right-[420px]' : 'right-0'} z-[550] flex flex-col ${isClosing ? 'animate-slide-down' : 'animate-slide-up'} transition-all duration-500`}
                     data-lenis-prevent
                     style={{
-                        background: `linear-gradient(to bottom, ${bgColor} 0%, #000 100%)`,
+                        background: `linear-gradient(to bottom, ${dominantColor} 0%, #000 100%)`,
                         overscrollBehavior: 'contain'
                     }}>
 
                     {/* Header: Move Fullscreen to top left */}
-                    <div className="flex justify-between items-center px-8 py-6">
+                    <div className="flex justify-between items-center px-4 md:px-8 py-4 md:py-6 relative">
                         <div className="flex gap-2">
                             <button 
                                 onClick={() => setIsFullscreen(true)}
-                                className="px-3 py-2 bg-white/10 hover:bg-white/20 rounded-md flex items-center gap-2 text-[10px] font-black text-white uppercase tracking-widest transition-all cursor-pointer"
+                                className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-xl md:rounded-md flex items-center gap-2 text-[9px] md:text-[11px] font-black text-white uppercase tracking-widest transition-all cursor-pointer shadow-lg active:scale-95"
                             >
-                                <Maximize2 size={12} /> Full screen
+                                <Maximize2 size={12} /> <span className="md:inline">Full screen</span>
                             </button>
                         </div>
 
-                        <div className="relative group">
+                        {/* Mobile Minimize Button */}
+                        <button 
+                            onClick={handleMinimize}
+                            className="md:hidden w-10 h-10 rounded-full flex items-center justify-center bg-white/5 text-white active:scale-90 transition-all"
+                        >
+                            <ChevronDown size={24} />
+                        </button>
+
+                        <div className="relative group hidden md:block">
                             <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
                                 <Search size={16} className="text-gray-400 group-focus-within:text-white transition-colors" />
                             </div>
@@ -269,9 +229,9 @@ const MusicPlayerBar = () => {
                         </div>
                     </div>
 
-                    <div className="flex-1 flex px-16 py-4 gap-12 overflow-hidden max-w-[1400px] mx-auto w-full">
-                        {/* Left: Album Art & Info (Align height with queue) */}
-                        <div className="w-[400px] flex flex-col animate-fade-in-up pt-6">
+                    <div className="flex-1 flex px-4 md:px-16 py-2 md:py-4 gap-0 md:gap-12 overflow-hidden max-w-[1400px] mx-auto w-full">
+                        {/* Left: Album Art & Info (Hidden on Mobile) */}
+                        <div className="hidden md:flex w-[400px] flex-col animate-fade-in-up pt-6">
                             <div className="aspect-square w-full rounded-xl overflow-hidden shadow-[0_40px_100px_rgba(0,0,0,0.8)] mb-8 relative group">
                                 <img src={imgUrl(currentSong.anhBia)} alt={currentSong.tieuDe} className="w-full h-full object-cover" />
                                 <div className="absolute inset-0 bg-black/5" />
@@ -283,23 +243,23 @@ const MusicPlayerBar = () => {
                                 </p>
                             </div>
                         </div>
-
-                        {/* Right: Queue & Navigation (Add data-lenis-prevent) */}
-                        <div className="flex-1 flex flex-col min-h-0 pt-6">
-                            <div className="flex gap-1.5 items-center mb-8 overflow-x-auto hide-scrollbar">
+                        
+                        {/* Right: Queue & Navigation */}
+                        <div className="flex-1 flex flex-col min-h-0 pt-0 md:pt-6">
+                            <div className="flex gap-1.5 items-center mb-4 md:mb-8 overflow-x-auto hide-scrollbar">
                                 {['Play queue', 'Lyrics', 'Credits']
                                     .filter(tab => tab !== 'Lyrics' || hasSyncedLyrics)
                                     .map((tab) => (
                                         <button
                                             key={tab}
                                             onClick={() => setActiveTab(tab)}
-                                            className={`px-5 py-2.5 rounded-xl text-[11px] font-black transition-all flex items-center gap-2 whitespace-nowrap uppercase tracking-widest cursor-pointer
-                                    ${activeTab === tab ? 'bg-white text-black shadow-lg' : 'text-gray-400 hover:bg-white/10'}`}
+                                            className={`flex-1 md:flex-none px-4 py-2.5 md:py-2.5 rounded-2xl md:rounded-xl text-[9px] md:text-[11px] font-black transition-all flex items-center justify-center gap-1.5 whitespace-nowrap uppercase tracking-widest cursor-pointer shadow-sm
+                                    ${activeTab === tab ? 'bg-white text-black shadow-lg scale-[1.02]' : 'text-gray-400 bg-white/5 hover:bg-white/10 border border-white/5'}`}
                                         >
-                                            {tab === 'Play queue' && <ListMusic size={14} />}
-                                            {tab === 'Lyrics' && <Mic2 size={14} />}
-                                            {tab === 'Credits' && <Search size={14} />}
-                                            {tab}
+                                            {tab === 'Play queue' && <ListMusic size={13} />}
+                                            {tab === 'Lyrics' && <Mic2 size={13} />}
+                                            {tab === 'Credits' && <Search size={13} />}
+                                            <span>{tab}</span>
                                         </button>
                                     ))}
                             </div>
@@ -452,6 +412,80 @@ const MusicPlayerBar = () => {
                             )}
                         </div>
                     </div>
+
+                    {/* Mobile Controls Section (Inside Modal) */}
+                    <div className="md:hidden flex flex-col gap-4 px-6 pb-32 pt-4 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/95 to-transparent border-t border-white/5 shadow-[0_-20px_40px_rgba(0,0,0,0.8)]">
+                        {/* Progress Bar */}
+                        <div className="w-full flex flex-col gap-2 px-1">
+                            <div className="flex-1 relative h-4 flex items-center group">
+                                <input
+                                    type="range"
+                                    min="0" max="100"
+                                    value={progress}
+                                    onChange={handleProgressChange}
+                                    className="w-full h-1.5 bg-white/10 rounded-full appearance-none cursor-pointer accent-white transition-all group-hover:h-2"
+                                    style={{
+                                        background: `linear-gradient(to right, white ${progress}%, rgba(255,255,255,0.05) ${progress}%)`
+                                    }}
+                                />
+                            </div>
+                            <div className="flex justify-between items-center px-0.5">
+                                <span className="text-[10px] text-gray-500 font-bold tracking-widest">{formatTime(currentTime)}</span>
+                                <span className="text-[10px] text-gray-500 font-bold tracking-widest text-right">{formatTime(duration)}</span>
+                            </div>
+                        </div>
+
+                        {/* Playback Controls */}
+                        <div className="flex items-center justify-between px-2">
+                             <button 
+                                onClick={() => setIsShuffle(!isShuffle)}
+                                className={`transition-colors p-2 ${isShuffle ? 'text-[#0F5E8F]' : 'text-gray-500 hover:text-white'}`}
+                            >
+                                <Shuffle size={20} />
+                            </button>
+                            
+                            <div className="flex items-center gap-8">
+                                <button onClick={prevSong} className="text-white active:scale-90 transition-transform">
+                                    <SkipBack size={28} fill="currentColor" />
+                                </button>
+                                
+                                <button onClick={togglePlay} className="w-16 h-16 rounded-full bg-white flex items-center justify-center active:scale-90 transition-all shadow-[0_0_30px_rgba(255,255,255,0.15)]">
+                                    {isPlaying ? <Pause size={32} fill="black" className="text-black" /> : <Play size={32} fill="black" className="text-black ml-1" />}
+                                </button>
+                                
+                                <button onClick={nextSong} className="text-white active:scale-90 transition-transform">
+                                    <SkipForward size={28} fill="currentColor" />
+                                </button>
+                            </div>
+
+                            <button 
+                                onClick={() => {
+                                    if (repeatMode === 'none') setRepeatMode('all');
+                                    else if (repeatMode === 'all') setRepeatMode('one');
+                                    else setRepeatMode('none');
+                                }}
+                                className={`transition-colors p-2 relative ${repeatMode !== 'none' ? 'text-[#0F5E8F]' : 'text-gray-500 hover:text-white'}`}
+                            >
+                                <Repeat size={20} />
+                                {repeatMode === 'one' && (
+                                    <span className="absolute top-1 right-1 bg-[#0F5E8F] text-white text-[8px] w-3.5 h-3.5 rounded-full flex items-center justify-center font-bold">1</span>
+                                )}
+                            </button>
+                        </div>
+
+                        {/* Jam Button Section */}
+                        {isJamActive && (
+                            <div className="flex items-center justify-center pt-2">
+                                <button 
+                                    onClick={() => setIsJamPanelOpen(!isJamPanelOpen)}
+                                    className={`flex items-center gap-3 px-10 py-3.5 rounded-2xl transition-all shadow-xl active:scale-95 ${isJamPanelOpen ? 'bg-emerald-500/20 text-emerald-500 ring-1 ring-emerald-500/50' : 'bg-white/5 border border-white/10 text-gray-300 hover:bg-white/10'}`}
+                                >
+                                    <Users size={18} strokeWidth={2.5} />
+                                    <span className="text-[11px] font-black uppercase tracking-[0.25em] leading-none">Buzzify Jam</span>
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 </div>
             )}
 
@@ -467,15 +501,21 @@ const MusicPlayerBar = () => {
             {/* Bottom Bar: Constant location & higher z-index */}
             <div 
                 className={`
-                    relative h-20 flex items-center px-10 gap-12 w-full transition-all duration-500 z-[1100] 
-                    ${isFullscreen ? `fixed bottom-0 left-0 border-none pointer-events-auto transform transition-transform duration-300 ${showBarInFullscreen ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'}` : 'bg-[#0a0a0a] border-t border-white/5 shadow-[0_-20px_50px_rgba(0,0,0,0.5)]'}
+                    fixed left-0 right-0 flex items-center transition-all duration-500 z-[1100] 
+                    ${isFullscreen ? `bottom-0 h-20 px-10 pointer-events-auto transform transition-transform duration-300 ${showBarInFullscreen ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'}` 
+                        : (isExpanded ? 'bottom-0 h-20 px-10 translate-y-full md:translate-y-0 opacity-0 md:opacity-100 pointer-events-none md:pointer-events-auto bg-transparent border-transparent' 
+                        : 'bottom-[72px] md:bottom-0 h-16 md:h-20 mx-3 md:mx-0 mb-2 md:mb-0 px-3 md:px-10 rounded-2xl md:rounded-none bg-[#1a1a1a]/95 md:bg-[#0a0a0a] backdrop-blur-md md:backdrop-blur-none border border-white/10 md:border-t md:border-white/5 shadow-2xl md:shadow-none')}
                 `}
-                style={isFullscreen ? { background: 'transparent' } : {}}
+                style={(isFullscreen || (isExpanded && window.innerWidth >= 768)) ? { background: 'transparent' } : {}}
             >
+                {/* Jam Active Indicator Strip */}
+                {isJamActive && (
+                    <div className="absolute top-0 left-4 right-4 md:left-0 md:right-0 h-[2px] bg-gradient-to-r from-transparent via-emerald-500 to-transparent shadow-[0_0_20px_rgba(16,185,129,0.5)] animate-pulse z-[-1]" />
+                )}
                 {/* Left: Song Info (Buttons next to title) */}
-                <div className="flex items-center gap-5 w-[33%] min-w-0">
-                    <div className="flex-shrink-0 cursor-pointer group" onClick={handleToggleExpand}>
-                        <div className="w-14 h-14 rounded-md overflow-hidden bg-gray-900 border border-white/10 relative shadow-2xl">
+                <div className="flex items-center gap-3 md:gap-5 w-full md:w-[33%] min-w-0" onClick={handleToggleExpand}>
+                    <div className="flex-shrink-0 cursor-pointer group">
+                        <div className="w-10 h-10 md:w-14 md:h-14 rounded-lg md:rounded-md overflow-hidden bg-gray-900 border border-white/10 relative shadow-2xl">
                             {sourceInfo?.type === 'playlist' && !currentSong.anhBia ? (
                                 // Nếu là playlist và không có ảnh bìa bài hát riêng (thực tế bài hát luôn có, nhưng nếu muốn hiện ảnh playlist)
                                 // Thực tế Bar thường hiện ảnh BÀI HÁT. Nhưng nếu user muốn hiện ảnh lưới của PLAYLIST đang phát:
@@ -486,34 +526,34 @@ const MusicPlayerBar = () => {
                         </div>
                     </div>
                     <div className="flex-1 min-w-0 flex flex-col justify-center">
-                        <div className="flex items-center gap-3.5 mb-1">
-                            <h4 className="text-sm font-black text-white truncate uppercase tracking-tight leading-tight cursor-default">{currentSong.tieuDe}</h4>
-                            <span className="px-1.5 py-0.5 bg-white/10 rounded text-[9px] font-black text-gray-400 border border-white/5 cursor-default">E</span>
+                        <div className="flex items-center gap-2 md:gap-3.5 mb-1">
+                            <h4 className="text-xs md:text-sm font-black text-white truncate uppercase tracking-tight leading-tight cursor-default">{currentSong.tieuDe}</h4>
+                            <span className="hidden md:inline px-1.5 py-0.5 bg-white/10 rounded text-[9px] font-black text-gray-400 border border-white/5 cursor-default">E</span>
                             <div className="flex items-center gap-1.5 ml-1">
-                                <button onClick={() => toggleLike(currentSong)} className="p-1 text-gray-500 hover:text-white transition-all cursor-pointer">
-                                    <Heart size={18} fill={likedSongIds.has(currentSong.id) ? "#0F5E8F" : "none"} color={likedSongIds.has(currentSong.id) ? "#0F5E8F" : "currentColor"} strokeWidth={likedSongIds.has(currentSong.id) ? 0 : 2} />
+                                <button onClick={(e) => { e.stopPropagation(); toggleLike(currentSong); }} className="p-1 text-gray-500 hover:text-white transition-all cursor-pointer">
+                                    <Heart size={16} fill={likedSongIds.has(currentSong.id) ? "#0F5E8F" : "none"} color={likedSongIds.has(currentSong.id) ? "#0F5E8F" : "currentColor"} strokeWidth={likedSongIds.has(currentSong.id) ? 0 : 2} />
                                 </button>
-                                <button className="p-1 text-gray-500 hover:text-white transition-all cursor-pointer">
+                                <button className="hidden md:block p-1 text-gray-500 hover:text-white transition-all cursor-pointer">
                                     <CircleOff size={18} />
                                 </button>
                                 <button 
-                                    onClick={(e) => handleOpenMenu(e, currentSong)}
-                                    className="p-1 text-gray-500 hover:text-white transition-all cursor-pointer"
+                                    onClick={(e) => { e.stopPropagation(); handleOpenMenu(e, currentSong); }}
+                                    className="hidden md:block p-1 text-gray-500 hover:text-white transition-all cursor-pointer"
                                 >
                                     <MoreHorizontal size={18} />
                                 </button>
                             </div>
                         </div>
-                        <div className="space-y-1">
-                            <p className="text-[11px] text-gray-500 font-bold uppercase tracking-widest leading-none">
-                                {currentSong.tenNgheSi}{currentSong.ngheSiHopTac ? `, ${currentSong.ngheSiHopTac}` : ''}
+                        <div className="space-y-0.5 md:space-y-1">
+                            <p className="text-[10px] md:text-[11px] text-gray-500 font-bold uppercase tracking-widest leading-none">
+                                {currentSong.tenNgheSi}
                             </p>
-                            <p className="text-[10px] text-white font-black uppercase tracking-widest leading-none">
+                            <p className="hidden md:block text-[10px] text-white font-black uppercase tracking-widest leading-none">
                                 Playing from: {sourceInfo?.type === 'Searching' ? (
                                     <span>{sourceInfo?.name || 'Now Playing'}</span>
                                 ) : (
                                     <span 
-                                        onClick={() => sourceInfo?.id && navigate(`/home/playlist/${sourceInfo.id}`)}
+                                        onClick={(e) => { e.stopPropagation(); sourceInfo?.id && navigate(`/home/playlist/${sourceInfo.id}`); }}
                                         className="underline decoration-1 underline-offset-2 hover:text-blue-400 cursor-pointer transition-colors"
                                     >
                                         {sourceInfo?.name || 'Now Playing'}
@@ -525,7 +565,7 @@ const MusicPlayerBar = () => {
                 </div>
 
                 {/* Center: Controls & Progress */}
-                <div className="flex-1 flex flex-col items-center gap-1.5 px-4 max-w-4xl">
+                <div className="hidden md:flex flex-1 flex flex-col items-center gap-1.5 px-4 max-w-4xl">
                     <div className="flex items-center gap-10">
                         <button 
                             onClick={() => setIsShuffle(!isShuffle)}
@@ -570,9 +610,13 @@ const MusicPlayerBar = () => {
                     </div>
                 </div>
 
-                {/* Right: Tools */}
-                <div className="w-[30%] flex items-center justify-end gap-6 h-full">
-                    <div className="flex items-center gap-3 w-32 group">
+                {/* Right: Tools & Mobile Play */}
+                <div className="w-[30%] md:w-[30%] flex items-center justify-end gap-3 md:gap-6 h-full">
+                    <button onClick={(e) => { e.stopPropagation(); togglePlay(); }} className="md:hidden p-2 text-white transition-all active:scale-90 cursor-pointer">
+                        {isPlaying ? <Pause size={28} fill="white" /> : <Play size={28} fill="white" />}
+                    </button>
+                    
+                    <div className="hidden md:flex items-center gap-3 w-32 group">
                         <button onClick={toggleMute} className="text-gray-500 hover:text-white transition-colors cursor-pointer">
                             {isMuted || volume === 0 ? <VolumeX size={18} /> : <Volume2 size={18} />}
                         </button>
@@ -594,6 +638,14 @@ const MusicPlayerBar = () => {
                             />
                         </div>
                     </div>
+                    {!isExpanded && isJamActive && (
+                        <button 
+                            onClick={() => setIsJamPanelOpen(!isJamPanelOpen)}
+                            className={`transition-all cursor-pointer p-2 rounded-xl ${isJamPanelOpen ? 'bg-emerald-500/20 text-emerald-500 shadow-lg ring-1 ring-emerald-500/20' : 'text-gray-500 hover:text-white hover:bg-white/5'}`}
+                        >
+                            <Users size={18} />
+                        </button>
+                    )}
                     {!isExpanded && (
                         <button className="text-gray-500 hover:text-white transition-colors cursor-pointer">
                             <ListMusic size={20} />

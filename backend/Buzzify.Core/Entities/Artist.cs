@@ -14,6 +14,11 @@ public partial class Artist
     public string? ProfileId { get; set; }
     public int FollowerCount { get; set; }
 
+    // Admin Controls & Advanced Info
+    public bool IsVerified { get; set; } = false;
+    public string? Bio { get; set; }
+    public string? CoverImage { get; set; }
+
     public virtual ICollection<Album> Albums { get; set; } = new List<Album>();
 
     public virtual Profile? Profile { get; set; }

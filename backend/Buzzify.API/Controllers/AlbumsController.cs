@@ -42,7 +42,8 @@ namespace Buzzify.API.Controllers
         public async Task<IActionResult> GetById(string id)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var album = await _albumService.GetAlbumByIdAsync(id, userId);
+            var userRole = User.FindFirstValue(ClaimTypes.Role);
+            var album = await _albumService.GetAlbumByIdAsync(id, userId, userRole);
             if (album == null) return NotFound(new { error = "Album not found." });
             return Ok(album);
         }
