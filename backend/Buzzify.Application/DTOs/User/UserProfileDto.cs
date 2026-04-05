@@ -7,6 +7,7 @@ namespace Buzzify.Application.DTOs.User
         public string? HoTen { get; set; }
         public string? AnhDaiDien { get; set; }
         public string VaiTro { get; set; } = "user";
+        public string LoaiTaiKhoan { get; set; } = "thuong";
         public bool IsEmailVerified { get; set; }
         public string? Provider { get; set; }
         public string? Bio { get; set; }

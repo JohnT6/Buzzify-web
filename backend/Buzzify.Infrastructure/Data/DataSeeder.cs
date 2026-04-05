@@ -48,6 +48,7 @@ namespace Buzzify.Infrastructure.Data
                 
                 // Admin Controls Schema Updates
                 await TryAddColumnAsync(context, "profiles", "is_locked", "BIT DEFAULT 0 NOT NULL");
+                await TryAddColumnAsync(context, "profiles", "loai_tai_khoan", "NVARCHAR(50) DEFAULT 'thuong' NOT NULL");
                 await TryAddColumnAsync(context, "artists", "is_verified", "BIT DEFAULT 0 NOT NULL");
                 await TryAddColumnAsync(context, "artists", "bio", "NVARCHAR(MAX) NULL");
                 await TryAddColumnAsync(context, "artists", "cover_image", "NVARCHAR(MAX) NULL");

@@ -4,7 +4,7 @@ import Cookies from 'js-cookie';
 import { 
     Home as HomeIcon, LayoutGrid, Heart, Library, 
     Search, ChevronLeft, ChevronRight, LogOut, X,
-    Plus, ArrowUpDown, Music, LayoutDashboard
+    Plus, ArrowUpDown, Music, LayoutDashboard, Crown, Sparkles
 } from 'lucide-react';
 import { 
     logoutApi, getCurrentUserApi, getPlaylistsApi, 
@@ -54,13 +54,16 @@ const UserMenu = ({ user, onLogout }) => {
     return (
         <div className="relative" ref={menuRef}>
             <button onClick={() => setIsOpen(!isOpen)} 
-                className="w-9 h-9 rounded-full overflow-hidden ring-2 ring-transparent hover:ring-white/30 transition-all active:scale-95 flex-shrink-0">
+                className={`w-9 h-9 rounded-full overflow-hidden ring-2 transition-all active:scale-95 flex-shrink-0 ${user?.loaiTaiKhoan === 'vip' ? 'ring-yellow-400 shadow-[0_0_10px_rgba(250,204,21,0.3)]' : 'ring-transparent hover:ring-white/30'}`}>
                 <img src={avatarSrc} alt="avatar" className="w-full h-full object-cover" />
             </button>
             {isOpen && (
                 <div className="absolute right-0 mt-3 w-60 bg-[#1a1a1a] rounded-2xl shadow-2xl border border-white/10 py-2 z-[600]">
                     <div className="px-4 py-3 border-b border-white/10">
-                        <p className="text-sm font-bold text-white truncate">{displayName}</p>
+                        <div className="flex items-center gap-2">
+                            <p className="text-sm font-bold text-white truncate">{displayName}</p>
+                            {user?.loaiTaiKhoan === 'vip' && <Crown size={14} className="text-yellow-400 fill-yellow-400 flex-shrink-0" title="Buzzify VIP" />}
+                        </div>
                         <p className="text-xs text-gray-500 truncate mt-0.5">{user?.email || 'Email của bạn'}</p>
                     </div>
                     {user?.vaiTro === 'artist' && (
@@ -84,6 +87,28 @@ const UserMenu = ({ user, onLogout }) => {
                         >
                             <LayoutDashboard size={14} /> Trang quản trị
                         </button>
+                    )}
+                    
+                    {user?.loaiTaiKhoan !== 'vip' && user?.vaiTro !== 'admin' && (
+                        <div className="px-2 py-2">
+                            <button 
+                                onClick={() => {
+                                    setIsOpen(false);
+                                    navigate('/premium');
+                                }}
+                                className="w-full text-left px-3 py-2.5 rounded-xl text-xs font-black flex items-center justify-between gap-2 transition-all active:scale-[0.98] group relative overflow-hidden"
+                                style={{ background: ACCENT }}
+                            >
+                                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+                                <div className="flex items-center gap-2 relative z-10">
+                                    <Sparkles size={14} className="text-white animate-pulse" />
+                                    <span className="uppercase tracking-wider">Nâng cấp VIP</span>
+                                </div>
+                                <div className="bg-white/20 px-1.5 py-0.5 rounded text-[9px] relative z-10 tracking-tighter">
+                                    3.000đ
+                                </div>
+                            </button>
+                        </div>
                     )}
                     {['Hồ sơ', 'Cài đặt', 'Trợ giúp'].map(label => (
                         <button 

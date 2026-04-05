@@ -328,6 +328,10 @@ public partial class BuzzifyDbContext : DbContext
                 .HasMaxLength(50)
                 .HasDefaultValue("user")
                 .HasColumnName("vai_tro");
+            entity.Property(e => e.LoaiTaiKhoan)
+                .HasMaxLength(50)
+                .HasDefaultValue("thuong")
+                .HasColumnName("loai_tai_khoan");
             entity.Property(e => e.VerificationCodeExpiry)
                 .HasColumnType("datetime")
                 .HasColumnName("verification_code_expiry");

@@ -64,6 +64,11 @@ import ArtistManagement from './pages/Admin/ArtistManagement';
 import AdminAlbumManagement from './pages/Admin/AlbumManagement';
 import PlaylistManagement from './pages/Admin/PlaylistManagement';
 
+import PremiumUpgrade from './pages/Premium/PremiumUpgrade';
+import PaymentSuccess from './pages/Premium/PaymentSuccess';
+import PaymentFailed from './pages/Premium/PaymentFailed';
+import PaymentCancel from './pages/Premium/PaymentCancel';
+
 import ConfirmJamActionModal from './components/MusicPlayer/ConfirmJamActionModal';
 
 const ArtistRoute = ({ children }) => {
@@ -151,6 +156,12 @@ function App() {
               <Route path="albums" element={<AdminAlbumManagement />} />
               <Route path="playlists" element={<PlaylistManagement />} />
             </Route>
+
+            {/* Premium Routes */}
+            <Route path="/premium" element={<ProtectedRoute><PremiumUpgrade /></ProtectedRoute>} />
+            <Route path="/premium/success" element={<ProtectedRoute><PaymentSuccess /></ProtectedRoute>} />
+            <Route path="/premium/failed" element={<ProtectedRoute><PaymentFailed /></ProtectedRoute>} />
+            <Route path="/premium/cancel" element={<ProtectedRoute><PaymentCancel /></ProtectedRoute>} />
             
             <Route path="*" element={<Navigate to="/" />} />
 

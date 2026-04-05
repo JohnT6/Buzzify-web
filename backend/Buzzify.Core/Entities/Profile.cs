@@ -13,6 +13,8 @@ public partial class Profile
 
     public string? VaiTro { get; set; }
 
+    public string? LoaiTaiKhoan { get; set; }
+
     public string? Email { get; set; }
 
     public string Provider { get; set; } = null!;
